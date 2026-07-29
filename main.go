@@ -9,7 +9,7 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/movies", handlers.GetMoviesHandler)
+	mux.HandleFunc("/movies", handlers.MoviesHandler)
 
 	log.Println("Server started on localhost:8080")
 
