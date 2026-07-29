@@ -14,16 +14,20 @@ var movies = []models.Movie{
 		Title:       "Titanic",
 		ReleaseYear: 1997,
 		Duration:    194,
+		Genres:      []models.Genre{},
+		Actors:      []models.Actor{},
 	},
 	{
 		Id:          2,
 		Title:       "Interstellar",
 		ReleaseYear: 2014,
 		Duration:    169,
+		Genres:      []models.Genre{},
+		Actors:      []models.Actor{},
 	},
 }
 
-func GetMovies(w http.ResponseWriter, r *http.Request) {
+func GetMoviesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
