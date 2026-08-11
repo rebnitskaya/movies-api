@@ -1,3 +1,7 @@
 package repository
 
-type MovieRepository struct{}
+import "database/sql"
+
+type MovieRepository struct {
+	db *sql.DB
+}

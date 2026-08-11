@@ -2,7 +2,10 @@ package server
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"log"
+	"movies_api/db"
 	"movies_api/handler"
 	"movies_api/middleware"
 	"movies_api/repository"
@@ -16,7 +19,7 @@ type Config struct {
 	Port string
 }
 
-func Server(ctx context.Context) *http.Server {
+func Server(ctx context.Context) (*http.Server, error) {
 	mux := http.NewServeMux()
 
 	cfg := Config{
@@ -24,7 +27,12 @@ func Server(ctx context.Context) *http.Server {
 		Port: "8080",
 	}
 
-	dependencyWiring(mux)
+	dataBase, err := db.OpenDB("movies_api.db")
+	if err != nil {
+		return nil, fmt.Errorf("Can't run the db: %w", err)
+	}
+
+	dependencyWiring(mux, dataBase)
 
 	srv := &http.Server{
 		Addr:    cfg.Host + ":" + cfg.Port,
@@ -35,11 +43,12 @@ func Server(ctx context.Context) *http.Server {
 	}
 
 	log.Println("Launching server at", srv.Addr)
-	return srv
+	return srv, nil
 }
 
-func dependencyWiring(mux *http.ServeMux) *http.ServeMux {
+func dependencyWiring(mux *http.ServeMux, db *sql.DB) *http.ServeMux {
 	repo := repository.NewRepository()
+
 	movieService := service.NewMovieService(repo.MovieRepo)
 	actorService := service.NewActorService(repo.ActorRepo)
 	genreService := service.NewGenreService(repo.GenreRepo)
