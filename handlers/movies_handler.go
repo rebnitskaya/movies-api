@@ -27,6 +27,15 @@ var movies = []models.Movie{
 	},
 }
 
+// GetMovies godoc
+// @Summary Get all movies
+// @Description Returns a paginated list of movies
+// @Tags movies
+// @Produce json
+// @Param page query int false "Page number"
+// @Param size query int false "Number of movies per page"
+// @Success 200 {object} models.Movie
+// @Router /movies [get]
 func GetMoviesHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -83,6 +92,7 @@ func CreateMovieHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// not the responsibility of the handler to route witch function to call
 func MoviesHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
