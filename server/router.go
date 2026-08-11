@@ -1,7 +1,8 @@
 package server
 
 import (
-	"movies_api/handlers"
+	"movies_api/handler"
+	h "movies_api/handler"
 	"net/http"
 
 	_ "movies_api/docs"
@@ -9,10 +10,11 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
-func RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/", handlers.HandleIndex)
-	mux.HandleFunc("GET /movies", handlers.GetMoviesHandler)
-	mux.HandleFunc("POST /movies", handlers.CreateMovieHandler)
+func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandler *h.ActorHandler, genreHandler *h.GenreHandler) {
+	mux.HandleFunc("/", handler.HandleRoot)
+	mux.HandleFunc("GET /movies", movieHandler.GetAllMovies)
+	mux.HandleFunc("GET /actors", actorHandler.GetAllActors)
+	mux.HandleFunc("GET /genres", genreHandler.GetAllGenres)
 
 	mux.Handle(
 		"/swagger/",

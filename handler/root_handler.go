@@ -1,11 +1,11 @@
-package handlers
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
 )
 
-func HandleIndex(w http.ResponseWriter, r *http.Request) {
+func HandleRoot(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
