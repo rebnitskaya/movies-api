@@ -10,20 +10,15 @@ type ActorRepository struct {
 	db *sql.DB
 }
 
-type ActorRepositoryInterface interface {
-	GetAllActors() ([]models.Actor, error)
-	CreateActor(models.Actor) bool
-}
-
-func (r ActorRepository) GetAllActors() ([]models.Actor, error) {
+func (r ActorRepository) FindAllActors() ([]models.Actor, error) {
 	query := `
-		SELECT id, name, birth_date
+		SELECT *
 		FROM actors
 	`
 
 	rows, err := r.db.Query(query)
 	if err != nil {
-		return nil, fmt.Errorf("Something happened during query execution:", err)
+		return nil, fmt.Errorf("Something happened during query execution: %w", err)
 	}
 	defer rows.Close()
 
@@ -39,7 +34,7 @@ func (r ActorRepository) GetAllActors() ([]models.Actor, error) {
 		)
 
 		if err != nil {
-			return nil, fmt.Errorf("Something happened during query execution:", err)
+			return nil, fmt.Errorf("Something happened during query execution: %w", err)
 		}
 
 		actors = append(actors, actor)
@@ -47,14 +42,58 @@ func (r ActorRepository) GetAllActors() ([]models.Actor, error) {
 
 	err = rows.Err()
 	if err != nil {
-		return nil, fmt.Errorf("Something happened during query execution:", err)
+		return nil, fmt.Errorf("Something happened during query execution: %w", err)
 	}
 
 	return actors, nil
 }
 
-// func (r ActorRepository) CreateActor (actor models.Actor) bool {
-// 	query := `
-// 		INSERT INTO actors
-// 	`
-// }
+func (r ActorRepository) CreateActor(actor models.Actor) (bool, error) {
+	query := `
+		INSERT INTO actors (name, birth_date)
+		VALUES (?,?)
+	`
+
+	_, err := r.db.Exec(query, actor.Name, actor.BirthDate)
+	if err != nil {
+		return false, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	return true, nil
+}
+
+func (r ActorRepository) FindActorByNameAndBirthDate(actorData models.Actor) (models.Actor, error) {
+	query := `
+		SELECT *
+		FROM actors
+		WHERE name = ? AND birth_date = ?
+	`
+
+	rows, err := r.db.Query(query, actorData.Name, actorData.BirthDate)
+	if err != nil {
+		return models.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	defer rows.Close()
+
+	var actor models.Actor
+
+	for rows.Next() {
+		err := rows.Scan(
+			&actor.Id,
+			&actor.Name,
+			&actor.BirthDate,
+		)
+
+		if err != nil {
+			return models.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+		}
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return models.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	return actor, nil
+}

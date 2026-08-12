@@ -12,9 +12,9 @@ import (
 
 func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandler *h.ActorHandler, genreHandler *h.GenreHandler) {
 	mux.HandleFunc("/", handler.HandleRoot)
-	mux.HandleFunc("GET /movies", movieHandler.GetAllMovies)
-	mux.HandleFunc("GET /actors", actorHandler.GetAllActors)
-	mux.HandleFunc("GET /genres", genreHandler.GetAllGenres)
+	mux.HandleFunc("/movies", movieHandler.GetAllMovies)
+	mux.HandleFunc("/actors", actorHandler.ActorHandlerRouter)
+	mux.HandleFunc("/genres", genreHandler.GetAllGenres)
 
 	mux.Handle(
 		"/swagger/",
