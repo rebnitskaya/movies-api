@@ -1,36 +1,27 @@
 package main
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"log"
-// 	"movies_api/server"
-// 	"net/http"
-// )
-
-// // @title Movie Database API
-// // @version 1.0
-// // @description REST API for managing movies, genres and actors.
-// // @host localhost:8080
-// // @BasePath /
-// func main() {
-// 	ctx := context.Background() //just for the start, will add some later
-
-// 	srv, err := server.Server(ctx)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-// 		errMsg := fmt.Sprintf("Server error: %v", err.Error())
-// 		log.Fatal(errMsg)
-// 	}
-// }
-
 import (
+	"context"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
+	"log"
+	"movies_api/server"
+	"net/http"
 )
 
+// @title Movie Database API
+// @version 1.0
+// @description REST API for managing movies, genres and actors.
+// @host localhost:8080
+// @BasePath /
 func main() {
-	fmt.Println("SQLITE DRIVER LOADED")
+	ctx := context.Background() //just for the start, will add some later
+
+	srv, err := server.Server(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		errMsg := fmt.Sprintf("Server error: %v", err.Error())
+		log.Fatal(errMsg)
+	}
 }
