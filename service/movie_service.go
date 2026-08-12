@@ -9,12 +9,6 @@ type MovieService struct {
 	repo repository.MovieRepository
 }
 
-func NewMovieService(repo repository.MovieRepository) *MovieService {
-	return &MovieService{
-		repo: repo,
-	}
-}
-
 // to check
 var movies = []models.Movie{
 	{

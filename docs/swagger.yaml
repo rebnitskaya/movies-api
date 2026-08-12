@@ -42,6 +42,28 @@ info:
   title: Movie Database API
   version: "1.0"
 paths:
+  /actors:
+    get:
+      description: Returns a paginated list of all actors
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of movies per page
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Actor'
+      summary: Get all actors
+      tags:
+      - actors
   /movies:
     get:
       description: Returns a paginated list of movies

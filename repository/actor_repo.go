@@ -97,3 +97,17 @@ func (r ActorRepository) FindActorByNameAndBirthDate(actorData models.Actor) (mo
 
 	return actor, nil
 }
+
+func (r ActorRepository) DeletActorById(id int) (bool, error) {
+	query := `
+		DELETE
+		FROM actors
+		WHERE id = ?
+	`
+	_, err := r.db.Exec(query, id)
+	if err != nil {
+		return false, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	return true, nil
+}

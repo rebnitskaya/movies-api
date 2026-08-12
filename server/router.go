@@ -12,8 +12,10 @@ import (
 
 func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandler *h.ActorHandler, genreHandler *h.GenreHandler) {
 	mux.HandleFunc("/", handler.HandleRoot)
+	mux.HandleFunc("GET /actors", actorHandler.GetAllActors)
+	mux.HandleFunc("POST /actors", actorHandler.PostActor)
+	mux.HandleFunc("DELETE /actors/{id}", actorHandler.DeleteActor)
 	mux.HandleFunc("/movies", movieHandler.GetAllMovies)
-	mux.HandleFunc("/actors", actorHandler.ActorHandlerRouter)
 	mux.HandleFunc("/genres", genreHandler.GetAllGenres)
 
 	mux.Handle(

@@ -52,8 +52,15 @@ func (s *ActorService) CreateActor(actorData models.Actor) (bool, error) {
 	return ok, nil
 }
 
-func NewActorService(repo repository.ActorRepository) *ActorService {
-	return &ActorService{
-		repo: repo,
+func (s *ActorService) DeleteActor(id int) (bool, error) {
+	ok, err := s.repo.DeletActorById(id)
+	if err != nil {
+		return false, err
 	}
+
+	if !ok {
+		return false, fmt.Errorf("Failed to delete user for some reason.")
+	}
+
+	return true, nil
 }
