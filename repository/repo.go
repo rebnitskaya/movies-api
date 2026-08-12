@@ -1,15 +1,17 @@
 package repository
 
+import "database/sql"
+
 type Repository struct {
 	MovieRepo MovieRepository
 	ActorRepo ActorRepository
 	GenreRepo GenreRepository
 }
 
-func NewRepository() Repository {
+func NewRepository(db *sql.DB) Repository {
 	return Repository{
-		MovieRepo: MovieRepository{},
-		ActorRepo: ActorRepository{},
-		GenreRepo: GenreRepository{},
+		MovieRepo: MovieRepository{db},
+		ActorRepo: ActorRepository{db},
+		GenreRepo: GenreRepository{db},
 	}
 }

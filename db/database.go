@@ -27,3 +27,27 @@ func OpenDB(path string) (*sql.DB, error) {
 
 	return db, nil
 }
+
+func CreateTables(db *sql.DB) error {
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS actors (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			birth_date TEXT NOT NULL
+		);
+
+		CREATE TABLE IF NOT EXISTS genres (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL UNIQUE
+		);
+
+		CREATE TABLE IF NOT EXISTS movies (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			title TEXT NOT NULL,
+			release_year INTEGER NOT NULL,
+			duration INTEGER NOT NULL
+		);
+	`)
+
+	return err
+}

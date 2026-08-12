@@ -32,6 +32,10 @@ func Server(ctx context.Context) (*http.Server, error) {
 		return nil, fmt.Errorf("Can't run the db: %w", err)
 	}
 
+	if err := db.CreateTables(dataBase); err != nil {
+		return nil, fmt.Errorf("Can't initiate tables: %w", err)
+	}
+
 	dependencyWiring(mux, dataBase)
 
 	srv := &http.Server{
@@ -47,7 +51,7 @@ func Server(ctx context.Context) (*http.Server, error) {
 }
 
 func dependencyWiring(mux *http.ServeMux, db *sql.DB) *http.ServeMux {
-	repo := repository.NewRepository()
+	repo := repository.NewRepository(db)
 
 	movieService := service.NewMovieService(repo.MovieRepo)
 	actorService := service.NewActorService(repo.ActorRepo)

@@ -28,3 +28,6 @@ func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+// bith_date >= '1895-12-28'
+// AND birth_date <=date('now')
