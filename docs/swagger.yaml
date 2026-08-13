@@ -1,0 +1,89 @@
+basePath: /
+definitions:
+  models.Actor:
+    properties:
+      birthDate:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  models.Genre:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  models.Movie:
+    properties:
+      actors:
+        items:
+          $ref: '#/definitions/models.Actor'
+        type: array
+      duration:
+        type: integer
+      genres:
+        items:
+          $ref: '#/definitions/models.Genre'
+        type: array
+      id:
+        type: integer
+      release_year:
+        type: integer
+      title:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for managing movies, genres and actors.
+  title: Movie Database API
+  version: "1.0"
+paths:
+  /actors:
+    get:
+      description: Returns a paginated list of all actors
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of movies per page
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Actor'
+      summary: Get all actors
+      tags:
+      - actors
+  /movies:
+    get:
+      description: Returns a paginated list of movies
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Number of movies per page
+        in: query
+        name: size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Movie'
+      summary: Get all movies
+      tags:
+      - movies
+swagger: "2.0"

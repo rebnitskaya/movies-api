@@ -1,0 +1,112 @@
+package repository
+
+import (
+	"database/sql"
+	"fmt"
+)
+
+type ActorRepository struct {
+	db *sql.DB
+}
+
+func (r ActorRepository) FindAllActors() ([]Actor, error) {
+	query := `
+		SELECT *
+		FROM actors
+	`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+	defer rows.Close()
+
+	var actors []Actor
+
+	for rows.Next() {
+		actor := Actor{}
+
+		err := rows.Scan(
+			&actor.Id,
+			&actor.Name,
+			&actor.BirthDate,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("Something happened during query execution: %w", err)
+		}
+
+		actors = append(actors, actor)
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	return actors, nil
+}
+
+func (r ActorRepository) CreateActor(actor Actor) (bool, error) {
+	query := `
+		INSERT INTO actors (name, birth_date)
+		VALUES (?,?)
+	`
+
+	_, err := r.db.Exec(query, actor.Name, actor.BirthDate)
+	if err != nil {
+		return false, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	return true, nil
+}
+
+func (r ActorRepository) FindActorByNameAndBirthDate(actorData Actor) (Actor, error) {
+	query := `
+		SELECT *
+		FROM actors
+		WHERE name = ? AND birth_date = ?
+	`
+
+	rows, err := r.db.Query(query, actorData.Name, actorData.BirthDate)
+	if err != nil {
+		return Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	defer rows.Close()
+
+	var actor Actor
+
+	for rows.Next() {
+		err := rows.Scan(
+			&actor.Id,
+			&actor.Name,
+			&actor.BirthDate,
+		)
+
+		if err != nil {
+			return Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+		}
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	return actor, nil
+}
+
+func (r ActorRepository) DeletActorById(id int) (bool, error) {
+	query := `
+		DELETE
+		FROM actors
+		WHERE id = ?
+	`
+	_, err := r.db.Exec(query, id)
+	if err != nil {
+		return false, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	return true, nil
+}
