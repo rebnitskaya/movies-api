@@ -2,7 +2,6 @@ package service
 
 import (
 	"fmt"
-	"movies_api/models"
 	"movies_api/repository"
 	"time"
 )
@@ -11,7 +10,7 @@ type ActorService struct {
 	repo repository.ActorRepository
 }
 
-func (s *ActorService) GetAllActors() ([]models.Actor, error) {
+func (s *ActorService) GetAllActors() ([]repository.Actor, error) {
 	actors, err := s.repo.FindAllActors()
 	if err != nil {
 		return nil, err
@@ -19,7 +18,7 @@ func (s *ActorService) GetAllActors() ([]models.Actor, error) {
 	return actors, nil
 }
 
-func (s *ActorService) CreateActor(actorData models.Actor) (bool, error) {
+func (s *ActorService) CreateActor(actorData repository.Actor) (bool, error) {
 	minDate := time.Date(
 		1895, 12, 28,
 		0, 0, 0, 0,

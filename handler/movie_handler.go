@@ -28,3 +28,7 @@ func (h *MovieHandler) GetAllMovies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *MovieHandler) MakeAMovie(w http.ResponseWriter, r http.Request) {
+
+}

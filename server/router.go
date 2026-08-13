@@ -1,7 +1,6 @@
 package server
 
 import (
-	"movies_api/handler"
 	h "movies_api/handler"
 	"net/http"
 
@@ -11,7 +10,7 @@ import (
 )
 
 func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandler *h.ActorHandler, genreHandler *h.GenreHandler) {
-	mux.HandleFunc("/", handler.HandleRoot)
+	mux.HandleFunc("/", h.HandleRoot)
 	mux.HandleFunc("GET /actors", actorHandler.GetAllActors)
 	mux.HandleFunc("POST /actors", actorHandler.PostActor)
 	mux.HandleFunc("DELETE /actors/{id}", actorHandler.DeleteActor)

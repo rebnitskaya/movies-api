@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"movies_api/models"
 )
 
 type Repository struct {
@@ -20,17 +19,17 @@ func NewRepository(db *sql.DB) Repository {
 }
 
 type ActorRepositoryInterface interface {
-	FindAllActors() ([]models.Actor, error)
-	CreateActor(models.Actor) (bool, error)
-	FindActorByNameAndBirthDate(models.Actor) (models.Actor, error)
+	FindAllActors() ([]Actor, error)
+	CreateActor(Actor) (bool, error)
+	FindActorByNameAndBirthDate(Actor) (Actor, error)
 }
 
 type GenreRepositoryInterface interface {
-	FindAllGenres() ([]models.Genre, error)
-	CreateGEnre(models.Genre) (bool, error)
+	FindAllGenres() ([]Genre, error)
+	CreateGEnre(Genre) (bool, error)
 }
 
 type MovieRepositoryInterface interface {
-	FindAllMovies() ([]models.Movie, error)
-	CreateActor(models.Movie) (bool, error)
+	FindAllMovies() ([]Movie, error)
+	CreateActor(Movie) (bool, error)
 }

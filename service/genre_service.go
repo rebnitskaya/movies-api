@@ -1,16 +1,15 @@
 package service
 
 import (
-	"movies_api/models"
-	"movies_api/repository"
+	r "movies_api/repository"
 )
 
 type GenreService struct {
-	repo repository.GenreRepository
+	repo r.GenreRepository
 }
 
 // to check
-var genres = []models.Genre{
+var genres = []r.Genre{
 	{
 		Id:   1,
 		Name: "Programming horror",
@@ -21,6 +20,6 @@ var genres = []models.Genre{
 	},
 }
 
-func (s *GenreService) GetAllGenres() ([]models.Genre, error) {
+func (s *GenreService) GetAllGenres() ([]r.Genre, error) {
 	return genres, nil
 }

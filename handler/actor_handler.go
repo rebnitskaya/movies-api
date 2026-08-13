@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"movies_api/models"
+	repo "movies_api/repository"
 	"net/http"
 	"strconv"
 )
@@ -23,7 +23,6 @@ func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to get movies", http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 
 	err = json.NewEncoder(w).Encode(actors)
@@ -33,7 +32,7 @@ func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ActorHandler) PostActor(w http.ResponseWriter, r *http.Request) {
-	var actorData models.Actor
+	var actorData repo.Actor
 
 	err := json.NewDecoder(r.Body).Decode(&actorData)
 

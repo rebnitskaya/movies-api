@@ -3,14 +3,13 @@ package repository
 import (
 	"database/sql"
 	"fmt"
-	"movies_api/models"
 )
 
 type ActorRepository struct {
 	db *sql.DB
 }
 
-func (r ActorRepository) FindAllActors() ([]models.Actor, error) {
+func (r ActorRepository) FindAllActors() ([]Actor, error) {
 	query := `
 		SELECT *
 		FROM actors
@@ -22,10 +21,10 @@ func (r ActorRepository) FindAllActors() ([]models.Actor, error) {
 	}
 	defer rows.Close()
 
-	var actors []models.Actor
+	var actors []Actor
 
 	for rows.Next() {
-		actor := models.Actor{}
+		actor := Actor{}
 
 		err := rows.Scan(
 			&actor.Id,
@@ -48,7 +47,7 @@ func (r ActorRepository) FindAllActors() ([]models.Actor, error) {
 	return actors, nil
 }
 
-func (r ActorRepository) CreateActor(actor models.Actor) (bool, error) {
+func (r ActorRepository) CreateActor(actor Actor) (bool, error) {
 	query := `
 		INSERT INTO actors (name, birth_date)
 		VALUES (?,?)
@@ -62,7 +61,7 @@ func (r ActorRepository) CreateActor(actor models.Actor) (bool, error) {
 	return true, nil
 }
 
-func (r ActorRepository) FindActorByNameAndBirthDate(actorData models.Actor) (models.Actor, error) {
+func (r ActorRepository) FindActorByNameAndBirthDate(actorData Actor) (Actor, error) {
 	query := `
 		SELECT *
 		FROM actors
@@ -71,12 +70,12 @@ func (r ActorRepository) FindActorByNameAndBirthDate(actorData models.Actor) (mo
 
 	rows, err := r.db.Query(query, actorData.Name, actorData.BirthDate)
 	if err != nil {
-		return models.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+		return Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
 	}
 
 	defer rows.Close()
 
-	var actor models.Actor
+	var actor Actor
 
 	for rows.Next() {
 		err := rows.Scan(
@@ -86,13 +85,13 @@ func (r ActorRepository) FindActorByNameAndBirthDate(actorData models.Actor) (mo
 		)
 
 		if err != nil {
-			return models.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+			return Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
 		}
 	}
 
 	err = rows.Err()
 	if err != nil {
-		return models.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+		return Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
 	}
 
 	return actor, nil
