@@ -10,7 +10,7 @@ func Recover(next http.Handler) http.Handler {
 		defer func() {
 			if rec := recover(); rec != nil {
 				log.Println("panic recovered:", rec)
-				http.Redirect(w, r, "/error", http.StatusSeeOther)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
 			}
 		}()
 		next.ServeHTTP(w, r)

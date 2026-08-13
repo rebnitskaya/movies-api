@@ -12,7 +12,7 @@ func HandleRoot(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := json.NewEncoder(w).Encode("Hi!")
+	err := json.NewEncoder(w).Encode("Try another request!")
 	if err != nil {
 		http.Error(w, "Some server error during root processing. Try again later!", http.StatusInternalServerError)
 	}
