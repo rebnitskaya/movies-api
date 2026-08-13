@@ -1,14 +1,16 @@
 package models
 
 type Genre struct {
-	Id   int64  `json:"id"`
-	Name string `json:"name"`
+	Id     int64   `json:"id"`
+	Name   string  `json:"name"`
+	Movies []Movie `json:"movies"`
 }
 
 type Actor struct {
-	Id        int64  `json:"id"`
-	Name      string `json:"name"`
-	BirthDate string `json:"birthDate"`
+	Id        int64   `json:"id"`
+	Name      string  `json:"name"`
+	BirthDate string  `json:"birthDate"`
+	Movies    []Movie `json:"movies"`
 }
 
 type Movie struct {

@@ -47,6 +47,24 @@ func CreateTables(db *sql.DB) error {
 			release_year INTEGER NOT NULL,
 			duration INTEGER NOT NULL
 		);
+
+		CREATE TABLE IF NOT EXISTS movie_actors (
+			movie_id INTEGER NOT NULL,
+			actor_id INTEGER NOT NULL,
+
+			PRIMARY KEY (movie_id,actor_id),
+			FOREIGN KEY (movie_id) REFERENCES movies(id)
+			FOREIGN KEY (actor_id) REFERENCES actors(id)
+		);
+
+		CREATE TABLE IF NOT EXISTS genres_movies (
+			genre_id INTEGER NOT NULL,
+			movie_id INTEGER NOT NULL,
+
+			PRIMARY KEY (genre_id,movie_id)
+			FOREIGN KEY (genre_id) REFERENCES genres(id)
+			FOREIGN KEY (movie_id) REFERENCES movies(id)
+		);
 	`)
 
 	return err
