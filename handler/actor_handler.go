@@ -8,16 +8,16 @@ import (
 	"strconv"
 )
 
-// getAllActors docs for swagger
-// @Summary Get all actors
-// @Description Returns a paginated list of all actors
-// @Tags actors
-// @Produce json
-// @Param page query int false "Page number"
-// @Param size query int false "Number of movies per page"
-// @Success 200 {object} models.Actor
-// @Router /actors [get]
 func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query()
+
+	// Retrieve actors filtered by name
+	if name := query.Get("name"); name != "" {
+		h.service.GetActorsWithName(name)
+
+		return
+	}
+
 	actors, err := h.service.GetAllActors()
 	if err != nil {
 		http.Error(w, "Failed to get movies", http.StatusInternalServerError)
@@ -48,8 +48,6 @@ func (h *ActorHandler) PostActor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("deleteActor")
-
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -63,5 +61,17 @@ func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *ActorHandler) GetActor(w http.ResponseWriter, r *http.Request) {
+	actorId := 0
+	h.service.GetActor(actorId)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *ActorHandler) PatchActor(w http.ResponseWriter, r *http.Request) {
+	data := ""
+	h.service.PatchActor(data)
 	w.WriteHeader(http.StatusNoContent)
 }

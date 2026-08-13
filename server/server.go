@@ -8,7 +8,7 @@ import (
 	"movies_api/db"
 	"movies_api/handler"
 	"movies_api/middleware"
-	"movies_api/repository"
+	repo "movies_api/repository"
 	"movies_api/service"
 	"net"
 	"net/http"
@@ -51,11 +51,9 @@ func Server(ctx context.Context) (*http.Server, error) {
 }
 
 func dependencyWiring(mux *http.ServeMux, db *sql.DB) *http.ServeMux {
-	repo := repository.NewRepository(db)
-
-	movieService := service.NewMovieService(repo.MovieRepo)
-	actorService := service.NewActorService(repo.ActorRepo)
-	genreService := service.NewGenreService(repo.GenreRepo)
+	movieService := service.NewMovieService(repo.NewMovieRepository(db))
+	actorService := service.NewActorService(repo.NewActorRepository(db))
+	genreService := service.NewGenreService(repo.NewGenreRepository(db))
 
 	movieHandler := handler.NewMovieHandler(movieService)
 	actorHandler := handler.NewActorHandler(actorService)

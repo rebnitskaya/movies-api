@@ -1,53 +1,14 @@
 package repository
 
 import (
-	"database/sql"
 	"fmt"
 )
 
-type ActorRepository struct {
-	db *sql.DB
+func (r actorRepository) FindAllActors() ([]Actor, error) {
+	return []Actor{}, nil
 }
 
-func (r ActorRepository) FindAllActors() ([]Actor, error) {
-	query := `
-		SELECT *
-		FROM actors
-	`
-
-	rows, err := r.db.Query(query)
-	if err != nil {
-		return nil, fmt.Errorf("Something happened during query execution: %w", err)
-	}
-	defer rows.Close()
-
-	var actors []Actor
-
-	for rows.Next() {
-		actor := Actor{}
-
-		err := rows.Scan(
-			&actor.Id,
-			&actor.Name,
-			&actor.BirthDate,
-		)
-
-		if err != nil {
-			return nil, fmt.Errorf("Something happened during query execution: %w", err)
-		}
-
-		actors = append(actors, actor)
-	}
-
-	err = rows.Err()
-	if err != nil {
-		return nil, fmt.Errorf("Something happened during query execution: %w", err)
-	}
-
-	return actors, nil
-}
-
-func (r ActorRepository) CreateActor(actor Actor) (bool, error) {
+func (r actorRepository) CreateActor(actor Actor) (bool, error) {
 	query := `
 		INSERT INTO actors (name, birth_date)
 		VALUES (?,?)
@@ -61,14 +22,14 @@ func (r ActorRepository) CreateActor(actor Actor) (bool, error) {
 	return true, nil
 }
 
-func (r ActorRepository) FindActorByNameAndBirthDate(actorData Actor) (Actor, error) {
+func (r actorRepository) FindActorByNameAndBirthDate(name string, birthDate string) (Actor, error) {
 	query := `
 		SELECT *
 		FROM actors
 		WHERE name = ? AND birth_date = ?
 	`
 
-	rows, err := r.db.Query(query, actorData.Name, actorData.BirthDate)
+	rows, err := r.db.Query(query, name, birthDate)
 	if err != nil {
 		return Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
 	}
@@ -97,16 +58,18 @@ func (r ActorRepository) FindActorByNameAndBirthDate(actorData Actor) (Actor, er
 	return actor, nil
 }
 
-func (r ActorRepository) DeletActorById(id int) (bool, error) {
-	query := `
-		DELETE
-		FROM actors
-		WHERE id = ?
-	`
-	_, err := r.db.Exec(query, id)
-	if err != nil {
-		return false, fmt.Errorf("Something happened during query execution: %w", err)
-	}
+func (r actorRepository) DeleteActorByID(id int) (bool, error) {
+	return false, nil
+}
 
-	return true, nil
+func (r actorRepository) FindActorByID(id int) (Actor, bool) {
+	return Actor{}, false
+}
+
+func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string) (Actor, bool) {
+	return Actor{}, false
+}
+
+func (r actorRepository) FindActorsByName(name string) ([]Actor, error) {
+	return []Actor{}, nil
 }

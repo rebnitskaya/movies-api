@@ -8,11 +8,6 @@ import (
 	"net/http"
 )
 
-// @title Movie Database API
-// @version 1.0
-// @description REST API for managing movies, genres and actors.
-// @host localhost:8080
-// @BasePath /
 func main() {
 	ctx := context.Background() //just for the start, will add some later
 
