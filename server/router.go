@@ -30,6 +30,7 @@ func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandl
 	mux.HandleFunc("DELETE /api/genres/{id}", genreHandler.DeleteGenre)
 
 	//aditional
+	// Retrieve all actors starring in a movie
 	mux.HandleFunc("GET /api/movies/{id}/actors", movieHandler.GetActorsInMovie)
 
 	// planning to use it for automatic documentation for endpoints
