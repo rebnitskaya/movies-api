@@ -11,7 +11,11 @@ type ActorService struct {
 }
 
 func (s *ActorService) GetAllActors() ([]r.Actor, error) {
-	return []r.Actor{}, nil
+	actors, err := s.repo.FindAllActors()
+	if err != nil {
+		return nil, err
+	}
+	return actors, nil
 }
 
 func (s *ActorService) CreateActor(actorData r.Actor) (bool, error) {
