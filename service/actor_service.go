@@ -35,6 +35,10 @@ func (s *ActorService) CreateActor(actorData r.Actor) (bool, error) {
 	}
 
 	actor, err := s.repo.FindActorByNameAndBirthDate(actorData.Name, actorData.BirthDate)
+	if err != nil {
+		return false, err
+	}
+
 	if actor.BirthDate == actorData.BirthDate && actor.Name == actorData.Name {
 		return false, fmt.Errorf("This actor already has been made before.")
 	}

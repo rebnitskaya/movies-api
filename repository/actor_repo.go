@@ -5,7 +5,39 @@ import (
 )
 
 func (r actorRepository) FindAllActors() ([]Actor, error) {
-	return []Actor{}, nil
+	query := `
+		SELECT id, name, birth_date
+		FROM actors
+	`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+	defer rows.Close()
+
+	var actors []Actor
+
+	for rows.Next() {
+		var actor Actor
+
+		err := rows.Scan(
+			&actor.Id,
+			&actor.Name,
+			&actor.BirthDate,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("Something happened during query execution: %w", err)
+		}
+
+		actors = append(actors, actor)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	return actors, nil
 }
 
 func (r actorRepository) CreateActor(actor Actor) (bool, error) {
