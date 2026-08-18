@@ -61,8 +61,11 @@ func (s *ActorService) DeleteActor(id int) (bool, error) {
 }
 
 func (s *ActorService) GetActor(id int) (r.Actor, error) {
-	s.repo.DeleteActorByID(id)
-	return r.Actor{}, nil
+	actor, found := s.repo.FindActorByID(id)
+	if !found {
+		return r.Actor{}, fmt.Errorf("Actor not found")
+	}
+	return actor, nil
 }
 
 func (s *ActorService) PatchActor(actorData string) (r.Actor, error) {
@@ -73,6 +76,9 @@ func (s *ActorService) PatchActor(actorData string) (r.Actor, error) {
 }
 
 func (s *ActorService) GetActorsWithName(name string) ([]r.Actor, error) {
-	s.repo.FindActorsByName(name)
-	return []r.Actor{}, nil
+	actors, err := s.repo.FindActorsByName(name)
+	if err != nil {
+		return nil, err
+	}
+	return actors, nil
 }

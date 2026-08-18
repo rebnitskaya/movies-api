@@ -95,7 +95,45 @@ func (r actorRepository) DeleteActorByID(id int) (bool, error) {
 }
 
 func (r actorRepository) FindActorByID(id int) (Actor, bool) {
-	return Actor{}, false
+	//or return error(?)
+	query := `
+		SELECT *
+		FROM actors
+		WHERE id = ?
+	`
+
+	rows, err := r.db.Query(query, id)
+	if err != nil {
+		return Actor{}, false
+	}
+	defer rows.Close()
+
+	var actor Actor
+	found := false
+
+	for rows.Next() {
+		found = true
+
+		err := rows.Scan(
+			&actor.Id,
+			&actor.Name,
+			&actor.BirthDate,
+		)
+		if err != nil {
+			return Actor{}, false
+		}
+	}
+
+	if !found {
+		return Actor{}, false
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return Actor{}, false
+	}
+
+	return actor, true
 }
 
 func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string) (Actor, bool) {
@@ -103,5 +141,38 @@ func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string) 
 }
 
 func (r actorRepository) FindActorsByName(name string) ([]Actor, error) {
-	return []Actor{}, nil
+	query := `
+		SELECT id, name, birth_date
+		FROM actors
+		WHERE name = ?
+	`
+
+	rows, err := r.db.Query(query, name)
+	if err != nil {
+		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+	defer rows.Close()
+
+	var actors []Actor
+
+	for rows.Next() {
+		var actor Actor
+
+		err := rows.Scan(
+			&actor.Id,
+			&actor.Name,
+			&actor.BirthDate,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("Something happened during query execution: %w", err)
+		}
+
+		actors = append(actors, actor)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	return actors, nil
 }
