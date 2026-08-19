@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	m "movies_api/models"
 	r "movies_api/repository"
 )
 
@@ -9,53 +10,54 @@ type MovieService struct {
 	repo r.MovieRepository
 }
 
-func (s *MovieService) GetAllMovies() ([]r.Movie, error) {
+func (s *MovieService) GetAllMovies() ([]m.Movie, error) {
 	s.repo.FindAllMovies()
-	return []r.Movie{}, nil
+	return []m.Movie{}, nil
 }
 
-func (s *MovieService) FindOneMovie(id int) ([]r.Movie, error) {
+func (s *MovieService) FindOneMovie(id int) ([]m.Movie, error) {
 	s.repo.FindMovieByID(id)
-	return []r.Movie{}, nil
+	return []m.Movie{}, nil
 }
 
-func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]r.Movie, error) {
+func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]m.Movie, error) {
 	s.repo.FindMoviesByGenre(genreID)
-	return []r.Movie{}, nil
+	return []m.Movie{}, nil
 }
 
-func (s *MovieService) GetAllMoviesWithYear(year int) ([]r.Movie, error) {
+func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.Movie, error) {
 	s.repo.FindMoviesByYear(year)
-	return []r.Movie{}, nil
+	return []m.Movie{}, nil
 }
 
-func (s *MovieService) GetAllMoviesWithActor(actorID int) ([]r.Movie, error) {
+func (s *MovieService) GetAllMoviesWithActor(actorID int) ([]m.Movie, error) {
 	s.repo.FindMoviesWithActor(actorID)
-	return []r.Movie{}, nil
+	return []m.Movie{}, nil
 }
 
-func (s *MovieService) GetActorsInMovie(movieId int) ([]r.Actor, error) {
+func (s *MovieService) GetActorsInMovie(movieId int) ([]m.Actor, error) {
 	s.repo.FindAllActorsInMovie(movieId)
-	return []r.Actor{}, nil
+	return []m.Actor{}, nil
 }
 
-func (s *MovieService) MovieMaker(movieData r.Movie) (r.Movie, error) {
-	if movieData.Title == "" || movieData.Duration == 0 || movieData.ReleaseYear == 0 {
-		return r.Movie{}, fmt.Errorf("Invalid data for movie creation.")
+func (s *MovieService) MovieMaker(movieData m.MovieDto) (m.Movie, error) {
+	_, err := movieData.Validate()
+	if err != nil {
+		return m.Movie{}, err
 	}
 
-	movie, err := s.repo.CreateMovie(movieData)
-	if err != nil {
-		return r.Movie{}, fmt.Errorf("Something happended during movie creation %s", err)
+	movie, error := s.repo.CreateMovie(movieData)
+	if error != nil {
+		return m.Movie{}, fmt.Errorf("Something happended during movie creation %s", err)
 	}
 
 	return movie, nil
 }
 
-func (s *MovieService) MoviePatcher(movieData r.Movie) (r.Movie, error) {
+func (s *MovieService) MoviePatcher(movieData m.Movie) (m.Movie, error) {
 	fields := make(map[string]string)
 	s.repo.ReplaceFieldsInMovie(movieData.Id, fields)
-	return r.Movie{}, nil
+	return m.Movie{}, nil
 }
 
 func (s *MovieService) DeleteMovie(movieID int) (bool, error) {
@@ -63,7 +65,7 @@ func (s *MovieService) DeleteMovie(movieID int) (bool, error) {
 	return false, nil
 }
 
-func (s *MovieService) FindActorsInMovie(movieID int) ([]r.Actor, error) {
+func (s *MovieService) FindActorsInMovie(movieID int) ([]m.Actor, error) {
 	s.repo.FindAllActorsInMovie(movieID)
-	return []r.Actor{}, nil
+	return []m.Actor{}, nil
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	m "movies_api/models"
 )
 
 type actorRepository struct {
@@ -29,31 +30,31 @@ func NewMovieRepository(db *sql.DB) MovieRepository {
 }
 
 type ActorRepository interface {
-	FindAllActors() ([]Actor, error)
-	CreateActor(Actor) (bool, error)
-	FindActorByNameAndBirthDate(string, string) (Actor, error)
+	FindAllActors() ([]m.Actor, error)
+	CreateActor(m.Actor) (bool, error)
+	FindActorByNameAndBirthDate(string, string) (m.Actor, error)
 	DeleteActorByID(int) (bool, error)
-	FindActorByID(int) (Actor, bool)
-	ReplaceFieldsInActor(int, map[string]string) (Actor, bool)
-	FindActorsByName(string) ([]Actor, error)
+	FindActorByID(int) (m.Actor, bool)
+	ReplaceFieldsInActor(int, map[string]string) (m.Actor, bool)
+	FindActorsByName(string) ([]m.Actor, error)
 }
 
 type GenreRepository interface {
-	FindAllGenres() ([]Genre, error)
-	CreateGenre(Genre) (bool, error)
-	FindGenreByID(int) (Genre, bool)
-	ReplaceFieldsInGenre(int, string) (Genre, bool)
+	FindAllGenres() ([]m.Genre, error)
+	CreateGenre(m.Genre) (bool, error)
+	FindGenreByID(int) (m.Genre, bool)
+	ReplaceFieldsInGenre(int, string) (m.Genre, bool)
 	DeleteGenreByID(int) (bool, error)
 }
 
 type MovieRepository interface {
-	FindAllMovies() ([]Movie, error)
-	CreateMovie(Movie) (Movie, error)
-	FindMovieByID(int) (Movie, bool)
-	ReplaceFieldsInMovie(int, map[string]string) (Movie, bool)
+	FindAllMovies() ([]m.Movie, error)
+	CreateMovie(m.MovieDto) (m.Movie, error)
+	FindMovieByID(int) (m.Movie, bool)
+	ReplaceFieldsInMovie(int, map[string]string) (m.Movie, bool)
 	DeleteMovieByID(int) (bool, error)
-	FindMoviesByGenre(int) ([]Movie, error)
-	FindMoviesByYear(int) ([]Movie, error)
-	FindMoviesWithActor(int) ([]Movie, error)
-	FindAllActorsInMovie(int) ([]Actor, error)
+	FindMoviesByGenre(int) ([]m.Movie, error)
+	FindMoviesByYear(int) ([]m.Movie, error)
+	FindMoviesWithActor(int) ([]m.Movie, error)
+	FindAllActorsInMovie(int) ([]m.Actor, error)
 }

@@ -1,4 +1,4 @@
-package repository
+package models
 
 type Genre struct {
 	Id     int     `json:"id"`
