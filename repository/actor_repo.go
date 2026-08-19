@@ -109,7 +109,7 @@ func (r actorRepository) DeleteActorByID(id int) (bool, error) {
 	return rowsAffected > 0, nil
 }
 
-func (r actorRepository) FindActorByID(id int) (m.Actor, bool) {
+func (r actorRepository) FindActorByID(id int) (m.Actor, error) {
 	//or return error(?)
 	query := `
 		SELECT *
@@ -119,7 +119,7 @@ func (r actorRepository) FindActorByID(id int) (m.Actor, bool) {
 
 	rows, err := r.db.Query(query, id)
 	if err != nil {
-		return m.Actor{}, false
+		return m.Actor{}, err
 	}
 	defer rows.Close()
 
@@ -135,25 +135,58 @@ func (r actorRepository) FindActorByID(id int) (m.Actor, bool) {
 			&actor.BirthDate,
 		)
 		if err != nil {
-			return m.Actor{}, false
+			return m.Actor{}, err
 		}
 	}
 
 	if !found {
-		return m.Actor{}, false
+		return m.Actor{}, err
 	}
 
 	err = rows.Err()
 	if err != nil {
-		return m.Actor{}, false
+		return m.Actor{}, err
 	}
 
-	return actor, true
+	return actor, nil
 
 }
 
-func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string) (m.Actor, bool) {
-	return m.Actor{}, false
+func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string) (m.Actor, error) {
+	query := "UPDATE actors SET "
+	args := []any{}
+
+	first := true
+	for field, value := range fields {
+		var column string
+
+		switch field {
+		case "name":
+			column = "name"
+		case "birthDate":
+			column = "birth_date"
+		default:
+			return m.Actor{}, fmt.Errorf("Invalid field: %s", field)
+		}
+
+		if !first {
+			query += ", "
+		}
+
+		query += column + " = ?"
+		args = append(args, value)
+		first = false
+	}
+
+	query += " WHERE id = ?"
+	args = append(args, id)
+
+	_, err := r.db.Exec(query, args...)
+	if err != nil {
+		return m.Actor{}, err
+	}
+
+	return r.FindActorByID(id)
 }
 
 func (r actorRepository) FindActorsByName(name string) ([]m.Actor, error) {

@@ -34,8 +34,8 @@ type ActorRepository interface {
 	CreateActor(m.Actor) (bool, error)
 	FindActorByNameAndBirthDate(string, string) (m.Actor, error)
 	DeleteActorByID(int) (bool, error)
-	FindActorByID(int) (m.Actor, bool)
-	ReplaceFieldsInActor(int, map[string]string) (m.Actor, bool)
+	FindActorByID(int) (m.Actor, error)
+	ReplaceFieldsInActor(int, map[string]string) (m.Actor, error)
 	FindActorsByName(string) ([]m.Actor, error)
 }
 

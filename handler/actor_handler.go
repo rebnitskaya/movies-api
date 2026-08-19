@@ -101,7 +101,28 @@ func (h *ActorHandler) GetActor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ActorHandler) PatchActor(w http.ResponseWriter, r *http.Request) {
-	data := ""
-	h.service.PatchActor(data)
-	w.WriteHeader(http.StatusNoContent)
+	id := r.PathValue("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid actor id. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	data := make(map[string]string)
+
+	err = json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid request body. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	actor, err := h.service.PatchActor(idInt, data)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update an actor. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(actor)
+
 }
