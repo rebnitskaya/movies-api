@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	r "movies_api/repository"
 )
 
@@ -39,8 +40,16 @@ func (s *MovieService) GetActorsInMovie(movieId int) ([]r.Actor, error) {
 }
 
 func (s *MovieService) MovieMaker(movieData r.Movie) (r.Movie, error) {
-	s.repo.CreateMovie(movieData)
-	return r.Movie{}, nil
+	if movieData.Title == "" || movieData.Duration == 0 || movieData.ReleaseYear == 0 {
+		return r.Movie{}, fmt.Errorf("Invalid data for movie creation.")
+	}
+
+	movie, err := s.repo.CreateMovie(movieData)
+	if err != nil {
+		return r.Movie{}, fmt.Errorf("Something happended during movie creation %s", err)
+	}
+
+	return movie, nil
 }
 
 func (s *MovieService) MoviePatcher(movieData r.Movie) (r.Movie, error) {

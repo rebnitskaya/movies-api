@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"movies_api/repository"
 	"net/http"
 )
@@ -52,9 +53,24 @@ func (h *MovieHandler) GetMovie(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) {
-	data := repository.Movie{}
-	h.service.MovieMaker(data)
-	w.WriteHeader(http.StatusNoContent)
+	movieData := repository.Movie{}
+
+	err := json.NewDecoder(r.Body).Decode(&movieData)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Something wrong with incoming data. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println(movieData)
+	m, error := h.service.MovieMaker(movieData)
+	if error != nil {
+		http.Error(w, fmt.Sprintf("Failed to create a film. %s", error), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(m)
 }
 
 func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) {

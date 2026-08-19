@@ -16,7 +16,7 @@ type Actor struct {
 type Movie struct {
 	Id          int     `json:"id"`
 	Title       string  `json:"title"`
-	ReleaseYear int     `json:"release_year"`
+	ReleaseYear int     `json:"releaseYear"`
 	Duration    int     `json:"duration"`
 	Genres      []Genre `json:"genres"`
 	Actors      []Actor `json:"actors"`
