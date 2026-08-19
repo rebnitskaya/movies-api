@@ -42,7 +42,7 @@ func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ActorHandler) PostActor(w http.ResponseWriter, r *http.Request) {
-	var actorData m.Actor
+	var actorData m.ActorDto
 
 	err := json.NewDecoder(r.Body).Decode(&actorData)
 	if err != nil {
