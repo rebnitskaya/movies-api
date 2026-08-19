@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	m "movies_api/models"
 	r "movies_api/repository"
 	"time"
 )
@@ -10,7 +11,7 @@ type ActorService struct {
 	repo r.ActorRepository
 }
 
-func (s *ActorService) GetAllActors() ([]r.Actor, error) {
+func (s *ActorService) GetAllActors() ([]m.Actor, error) {
 	actors, err := s.repo.FindAllActors()
 	if err != nil {
 		return nil, err
@@ -18,7 +19,7 @@ func (s *ActorService) GetAllActors() ([]r.Actor, error) {
 	return actors, nil
 }
 
-func (s *ActorService) CreateActor(actorData r.Actor) (bool, error) {
+func (s *ActorService) CreateActor(actorData m.Actor) (bool, error) {
 	minDate := time.Date(
 		1895, 12, 28,
 		0, 0, 0, 0,
@@ -60,22 +61,22 @@ func (s *ActorService) DeleteActor(id int) (bool, error) {
 	return false, nil
 }
 
-func (s *ActorService) GetActor(id int) (r.Actor, error) {
+func (s *ActorService) GetActor(id int) (m.Actor, error) {
 	actor, found := s.repo.FindActorByID(id)
 	if !found {
-		return r.Actor{}, fmt.Errorf("Actor not found")
+		return m.Actor{}, fmt.Errorf("Actor not found")
 	}
 	return actor, nil
 }
 
-func (s *ActorService) PatchActor(actorData string) (r.Actor, error) {
+func (s *ActorService) PatchActor(actorData string) (m.Actor, error) {
 	actorId := 0
 	data := make(map[string]string)
 	s.repo.ReplaceFieldsInActor(actorId, data)
-	return r.Actor{}, nil
+	return m.Actor{}, nil
 }
 
-func (s *ActorService) GetActorsWithName(name string) ([]r.Actor, error) {
+func (s *ActorService) GetActorsWithName(name string) ([]m.Actor, error) {
 	actors, err := s.repo.FindActorsByName(name)
 	if err != nil {
 		return nil, err

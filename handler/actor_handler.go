@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	repo "movies_api/repository"
+	m "movies_api/models"
 	"net/http"
 	"strconv"
 )
@@ -42,7 +42,7 @@ func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ActorHandler) PostActor(w http.ResponseWriter, r *http.Request) {
-	var actorData repo.Actor
+	var actorData m.Actor
 
 	err := json.NewDecoder(r.Body).Decode(&actorData)
 	if err != nil {
