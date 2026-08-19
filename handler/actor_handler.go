@@ -65,13 +65,13 @@ func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to delete an actor. %s", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid actor id. %s", err), http.StatusBadRequest)
 		return
 	}
 
-	_, err = h.service.DeleteActor(idInt)
+	err = h.service.DeleteActor(idInt)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to delete an actor. %s", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to delete an actor. %s", err), http.StatusNotFound)
 		return
 	}
 

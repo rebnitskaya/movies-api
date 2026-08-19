@@ -47,9 +47,15 @@ func (s *ActorService) CreateActor(actorData m.ActorDto) (bool, error) {
 	return ok, nil
 }
 
-func (s *ActorService) DeleteActor(id int) (bool, error) {
-	s.repo.DeleteActorByID(id)
-	return false, nil
+func (s *ActorService) DeleteActor(id int) error {
+	deleted, err := s.repo.DeleteActorByID(id)
+	if err != nil {
+		return err
+	}
+	if !deleted {
+		return fmt.Errorf("actor not found")
+	}
+	return nil
 }
 
 func (s *ActorService) GetActor(id int) (m.Actor, error) {

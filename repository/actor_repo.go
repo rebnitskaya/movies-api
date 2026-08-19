@@ -92,7 +92,21 @@ func (r actorRepository) FindActorByNameAndBirthDate(name string, birthDate stri
 }
 
 func (r actorRepository) DeleteActorByID(id int) (bool, error) {
-	return false, nil
+	query := `
+		DELETE FROM actors
+		WHERE id = ?
+	`
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return false, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	return rowsAffected > 0, nil
 }
 
 func (r actorRepository) FindActorByID(id int) (m.Actor, bool) {
