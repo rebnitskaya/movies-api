@@ -50,7 +50,7 @@ type GenreRepository interface {
 type MovieRepository interface {
 	FindAllMovies() ([]m.Movie, error)
 	CreateMovie(m.MovieDto) (m.Movie, error)
-	FindMovieByID(int) (m.Movie, bool)
+	FindMovieByID(int) (m.Movie, error)
 	ReplaceFieldsInMovie(int, map[string]string) (m.Movie, bool)
 	DeleteMovieByID(int) (bool, error)
 	FindMoviesByGenre(int) ([]m.Movie, error)

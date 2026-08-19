@@ -68,9 +68,29 @@ func (r movieRepository) CreateMovie(movieData models.MovieDto) (models.Movie, e
 	return movie, nil
 }
 
-func (r movieRepository) FindMovieByID(movieId int) (models.Movie, bool) {
-	return models.Movie{}, false
+func (r movieRepository) FindMovieByID(movieId int) (models.Movie, error) {
+	query := `
+		SELECT id, title, release_year, duration
+		FROM movies
+		WHERE id = ?
+	`
+
+	var movie m.Movie
+
+	err := r.db.QueryRow(query, movieId).Scan(
+		&movie.Id,
+		&movie.Title,
+		&movie.ReleaseYear,
+		&movie.Duration,
+	)
+
+	if err != nil {
+		return m.Movie{}, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	return movie, nil
 }
+
 func (r movieRepository) ReplaceFieldsInMovie(movieId int, filedsToUpdate map[string]string) (models.Movie, bool) {
 	return models.Movie{}, false
 }

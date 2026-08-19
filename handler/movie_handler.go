@@ -1,10 +1,13 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	m "movies_api/models"
 	"net/http"
+	"strconv"
 )
 
 func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
@@ -46,10 +49,29 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MovieHandler) GetMovie(w http.ResponseWriter, r *http.Request) {
-	movieId := 0
-	h.service.FindOneMovie(movieId)
-	w.WriteHeader(http.StatusNoContent)
+	movieId, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "Wrong movie id format", http.StatusBadRequest)
+		return
+	}
 
+	movie, err := h.service.FindOneMovie(movieId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Movie not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "Failed to get movie: %s", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(movie)
+	if err != nil {
+		return
+	}
 }
 
 func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) {
