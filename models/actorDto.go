@@ -7,7 +7,7 @@ import (
 type ActorDto struct {
 	Name      string  `json:"name"`
 	BirthDate string  `json:"birthDate"`
-	Movies    []Movie `jsom:"movies"`
+	Movies    []Movie `json:"movies"`
 }
 
 func (m ActorDto) Validate() (bool, error) {
