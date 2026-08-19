@@ -33,7 +33,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 
 	movies, err := h.service.GetAllMovies()
 	if err != nil {
-		http.Error(w, "failed to get movies", http.StatusInternalServerError)
+		http.Error(w, "Failed to get movies", http.StatusInternalServerError)
 		return
 	}
 

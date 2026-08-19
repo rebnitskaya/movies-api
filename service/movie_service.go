@@ -11,8 +11,11 @@ type MovieService struct {
 }
 
 func (s *MovieService) GetAllMovies() ([]m.Movie, error) {
-	s.repo.FindAllMovies()
-	return []m.Movie{}, nil
+	res, err := s.repo.FindAllMovies()
+	if err != nil {
+		return []m.Movie{}, err
+	}
+	return res, nil
 }
 
 func (s *MovieService) FindOneMovie(id int) ([]m.Movie, error) {
@@ -46,6 +49,10 @@ func (s *MovieService) MovieMaker(movieData m.MovieDto) (m.Movie, error) {
 		return m.Movie{}, err
 	}
 
+	res, err := s.repo.FindMovieByTitleAndYear(movieData.Title, movieData.ReleaseYear)
+	if res.Title == movieData.Title && res.ReleaseYear == movieData.ReleaseYear {
+		return m.Movie{}, fmt.Errorf("This movie already has been made before.")
+	}
 	movie, error := s.repo.CreateMovie(movieData)
 	if error != nil {
 		return m.Movie{}, fmt.Errorf("Something happended during movie creation %s", err)
