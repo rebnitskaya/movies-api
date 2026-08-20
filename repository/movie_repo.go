@@ -70,7 +70,7 @@ func (r movieRepository) CreateMovie(movieData models.MovieDto) (models.Movie, e
 	return movie, nil
 }
 
-func (r movieRepository) FindMovieByID(movieId int) (models.Movie, error) {
+func (r movieRepository) FindMovieByID(movieID int) (models.Movie, error) {
 	query := `
 		SELECT id, title, release_year, duration
 		FROM movies
@@ -79,7 +79,7 @@ func (r movieRepository) FindMovieByID(movieId int) (models.Movie, error) {
 
 	var movie m.Movie
 
-	err := r.db.QueryRow(query, movieId).Scan(
+	err := r.db.QueryRow(query, movieID).Scan(
 		&movie.Id,
 		&movie.Title,
 		&movie.ReleaseYear,
@@ -108,6 +108,7 @@ func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[st
 			return m.Movie{}, fmt.Errorf("Not allowed to change the field: %s", field)
 		}
 
+		//since map can return stuf in random order
 		setFields = append(setFields, field+" = ?")
 		args = append(args, value)
 	}
@@ -136,13 +137,13 @@ func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[st
 	return movie, nil
 }
 
-func (r movieRepository) DeleteMovieByID(movieId int) (bool, error) {
+func (r movieRepository) DeleteMovieByID(movieID int) (bool, error) {
 	query := `
 		DELETE FROM movies
 		WHERE id = ?
 	`
 
-	res, err := r.db.Exec(query, movieId)
+	res, err := r.db.Exec(query, movieID)
 	if err != nil {
 		return false, fmt.Errorf("Failed to delete movie: %w", err)
 	}
@@ -200,10 +201,11 @@ func (r movieRepository) FindMoviesByYear(year int) ([]models.Movie, error) {
 	return movies, nil
 }
 
-func (r movieRepository) FindMoviesWithActor(actorId int) ([]models.Movie, error) {
+func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.Movie, error) {
 	return []models.Movie{}, nil
 }
-func (r movieRepository) FindAllActorsInMovie(movieId int) ([]models.Actor, error) {
+
+func (r movieRepository) FindAllActorsInMovie(movieID int) ([]models.Actor, error) {
 	return []models.Actor{}, nil
 }
 
@@ -241,4 +243,32 @@ func (r movieRepository) FindMovieByTitleAndYear(title string, year int) (models
 	}
 
 	return movie, nil
+}
+
+func (r movieRepository) AddActorToMovie(movieID, actorID int) error {
+	query := `
+		INSERT INTO movie_actors (movie_id, actor_id)
+		VALUES (?, ?)
+	`
+
+	_, err := r.db.Exec(query, movieID, actorID)
+	if err != nil {
+		return fmt.Errorf("Failed to add actor to movie: %w", err)
+	}
+
+	return nil
+}
+
+func (r movieRepository) RemoveActorFromMovie(movieID, actorID int) error {
+	query := `
+		DELETE FROM movie_actors
+		WHERE movie_id = ? AND actor_id = ?
+	`
+
+	_, err := r.db.Exec(query, movieID, actorID)
+	if err != nil {
+		return fmt.Errorf("Failed to remove actor from movie: %w", err)
+	}
+
+	return nil
 }

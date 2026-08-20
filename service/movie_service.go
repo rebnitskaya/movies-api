@@ -116,3 +116,47 @@ func (s *MovieService) FindActorsInMovie(movieID int) ([]m.Actor, error) {
 	s.repo.FindAllActorsInMovie(movieID)
 	return []m.Actor{}, nil
 }
+
+func (s *MovieService) AddActorToMovie(movieID, actorID int) (m.Movie, error) {
+	if movieID <= 0 {
+		return m.Movie{}, fmt.Errorf("Invalid movie id.")
+	}
+
+	if actorID <= 0 {
+		return m.Movie{}, fmt.Errorf("Invalid actor id.")
+	}
+
+	err := s.repo.AddActorToMovie(movieID, actorID)
+	if err != nil {
+		return m.Movie{}, err
+	}
+
+	movie, err := s.repo.FindMovieByID(movieID)
+	if err != nil {
+		return m.Movie{}, err
+	}
+
+	return movie, nil
+}
+
+func (s *MovieService) DeleteActorFromMovie(movieID, actorID int) (m.Movie, error) {
+	if movieID <= 0 {
+		return m.Movie{}, fmt.Errorf("Invalid movie id.")
+	}
+
+	if actorID <= 0 {
+		return m.Movie{}, fmt.Errorf("Invalid actor id.")
+	}
+
+	err := s.repo.RemoveActorFromMovie(movieID, actorID)
+	if err != nil {
+		return m.Movie{}, err
+	}
+
+	movie, err := s.repo.FindMovieByID(movieID)
+	if err != nil {
+		return m.Movie{}, err
+	}
+
+	return movie, nil
+}

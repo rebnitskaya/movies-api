@@ -123,7 +123,6 @@ func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(m)
 }
 
-// not yet ready
 func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) {
 	movieId, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
@@ -173,6 +172,44 @@ func (h *MovieHandler) DeleteMovie(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *MovieHandler) PostActorToMovie(w http.ResponseWriter, r *http.Request) {
+	movieID, err := strconv.Atoi(r.PathValue("movieID"))
+	if err != nil {
+		http.Error(w, "Wrong movie id format", http.StatusBadRequest)
+		return
+	}
+	actorID, err := strconv.Atoi(r.PathValue("actorID"))
+	if err != nil {
+		http.Error(w, "Wrong actor id format", http.StatusBadRequest)
+		return
+	}
+
+	movie, err := h.service.AddActorToMovie(movieID, actorID)
+
+	w.Header().Set("Content-Type", "aplication/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(movie)
+}
+
+func (h *MovieHandler) DeleteActorFromMovie(w http.ResponseWriter, r *http.Request) {
+	movieID, err := strconv.Atoi(r.PathValue("movieID"))
+	if err != nil {
+		http.Error(w, "Wrong movie id format", http.StatusBadRequest)
+		return
+	}
+	actorID, err := strconv.Atoi(r.PathValue("actorID"))
+	if err != nil {
+		http.Error(w, "Wrong actor id format", http.StatusBadRequest)
+		return
+	}
+
+	movie, err := h.service.DeleteActorFromMovie(movieID, actorID)
+
+	w.Header().Set("Content-Type", "aplication/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(movie)
 }
 
 // not yet ready

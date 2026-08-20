@@ -58,4 +58,6 @@ type MovieRepository interface {
 	FindMoviesWithActor(int) ([]m.Movie, error)
 	FindAllActorsInMovie(int) ([]m.Actor, error)
 	FindMovieByTitleAndYear(string, int) (m.Movie, error)
+	AddActorToMovie(int, int) error
+	RemoveActorFromMovie(int, int) error
 }
