@@ -72,8 +72,16 @@ func (s *MovieService) MoviePatcher(movieData m.Movie) (m.Movie, error) {
 }
 
 func (s *MovieService) DeleteMovie(movieID int) (bool, error) {
-	s.repo.DeleteMovieByID(movieID)
-	return false, nil
+	if movieID <= 0 {
+		return false, fmt.Errorf("Invalid movie id.")
+	}
+
+	ok, err := s.repo.DeleteMovieByID(movieID)
+	if err != nil {
+		return false, err
+	}
+
+	return ok, nil
 }
 
 func (s *MovieService) FindActorsInMovie(movieID int) ([]m.Actor, error) {

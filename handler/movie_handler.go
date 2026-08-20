@@ -101,8 +101,28 @@ func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *MovieHandler) DeleteMovie(w http.ResponseWriter, r *http.Request) {
-	movieId := 0
-	h.service.DeleteMovie(movieId)
+	movieId, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "Wrong movie id format", http.StatusBadRequest)
+		return
+	}
+
+	ok, err := h.service.DeleteMovie(movieId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Movie not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "Failed to delete movie: %s", http.StatusInternalServerError)
+		return
+	}
+
+	if !ok {
+		http.Error(w, "Failed to delete movie: %s", http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusNoContent)
 }
 

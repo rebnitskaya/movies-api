@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"database/sql"
 	"fmt"
 	"movies_api/models"
 	m "movies_api/models"
@@ -95,7 +96,26 @@ func (r movieRepository) ReplaceFieldsInMovie(movieId int, filedsToUpdate map[st
 	return models.Movie{}, false
 }
 func (r movieRepository) DeleteMovieByID(movieId int) (bool, error) {
-	return false, nil
+	query := `
+		DELETE FROM movies
+		WHERE id = ?
+	`
+
+	res, err := r.db.Exec(query, movieId)
+	if err != nil {
+		return false, fmt.Errorf("Failed to delete movie: %w", err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("Failed to check deleted movie: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return false, sql.ErrNoRows
+	}
+
+	return true, nil
 }
 func (r movieRepository) FindMoviesByGenre(genreId int) ([]models.Movie, error) {
 	return []models.Movie{}, nil
