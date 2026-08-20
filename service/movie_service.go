@@ -17,13 +17,7 @@ func (s *MovieService) GetAllMovies() ([]m.MovieDto, error) {
 		return []m.MovieDto{}, err
 	}
 
-	slices.SortFunc(movies, func(a, b m.MovieDto) int {
-		if a.Id > b.Id {
-			return 1
-		} else {
-			return -1
-		}
-	})
+	sortMovies(movies)
 
 	return movies, nil
 }
@@ -54,9 +48,15 @@ func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.Movie, error) {
 	return movies, nil
 }
 
-func (s *MovieService) GetAllMoviesWithActor(actorID int) ([]m.Movie, error) {
-	s.repo.FindMoviesWithActor(actorID)
-	return []m.Movie{}, nil
+func (s *MovieService) GetAllMoviesWithActor(actorID int) ([]m.MovieDto, error) {
+	movies, err := s.repo.FindMoviesWithActor(actorID)
+	if err != nil {
+		return []m.MovieDto{}, err
+	}
+
+	sortMovies(movies)
+
+	return movies, nil
 }
 
 func (s *MovieService) GetActorsInMovie(movieId int) ([]m.Actor, error) {
@@ -169,4 +169,14 @@ func (s *MovieService) DeleteActorFromMovie(movieID, actorID int) (m.MovieDto, e
 	}
 
 	return movie, nil
+}
+
+func sortMovies(movies []m.MovieDto) {
+	slices.SortFunc(movies, func(a, b m.MovieDto) int {
+		if a.Id > b.Id {
+			return 1
+		} else {
+			return -1
+		}
+	})
 }

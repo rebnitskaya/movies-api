@@ -55,7 +55,7 @@ type MovieRepository interface {
 	DeleteMovieByID(int) (bool, error)
 	FindMoviesByGenre(int) ([]m.Movie, error)
 	FindMoviesByYear(int) ([]m.Movie, error)
-	FindMoviesWithActor(int) ([]m.Movie, error)
+	FindMoviesWithActor(int) ([]m.MovieDto, error)
 	FindAllActorsInMovie(int) ([]m.Actor, error)
 	FindMovieByTitleAndYear(string, int) (m.Movie, error)
 	AddActorToMovie(int, int) error

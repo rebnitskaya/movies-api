@@ -78,7 +78,6 @@ func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
 		movies = append(movies, *v)
 	}
 
-	fmt.Println(movies)
 	return movies, nil
 }
 
@@ -272,8 +271,78 @@ func (r movieRepository) FindMoviesByYear(year int) ([]models.Movie, error) {
 	return movies, nil
 }
 
-func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.Movie, error) {
-	return []models.Movie{}, nil
+func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, error) {
+	query := `
+		SELECT m.id, m.title, m.release_year, m.duration, a.id, a.name, a.birth_date
+		FROM movies m
+		LEFT JOIN movie_actors ma ON ma.movie_id = m.id
+		LEFT JOIN actors a ON a.id = ma.actor_id
+		WHERE a.id = ?
+	`
+
+	rows, err := r.db.Query(query, actorID)
+	if err != nil {
+		return []models.MovieDto{}, err
+	}
+
+	moviesMap := make(map[int]*models.MovieDto)
+
+	for rows.Next() {
+		var movieID int
+		var title string
+		var releaseYear int
+		var duration int
+
+		var actorID sql.NullInt64
+		var actorName sql.NullString
+		var actorBirthDate sql.NullString
+
+		err := rows.Scan(
+			&movieID,
+			&title,
+			&releaseYear,
+			&duration,
+			&actorID,
+			&actorName,
+			&actorBirthDate,
+		)
+
+		if err != nil {
+			return []models.MovieDto{}, fmt.Errorf("Something happened during query execution: %w", err)
+		}
+
+		movie, exists := moviesMap[movieID]
+
+		if !exists {
+			movie = &models.MovieDto{
+				Id:          movieID,
+				Title:       title,
+				ReleaseYear: releaseYear,
+				Duration:    duration,
+			}
+
+			moviesMap[movieID] = movie
+		}
+
+		if actorID.Valid {
+			movie.Actors = append(movie.Actors, m.ActorInFilmDto{
+				Id:        int(actorID.Int64),
+				Name:      actorName.String,
+				BirthDate: actorBirthDate.String,
+			})
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("Error while iterating movies: %w", err)
+	}
+
+	movies := make([]m.MovieDto, 0, len(moviesMap))
+	for _, v := range moviesMap {
+		movies = append(movies, *v)
+	}
+
+	return movies, nil
 }
 
 func (r movieRepository) FindAllActorsInMovie(movieID int) ([]models.Actor, error) {

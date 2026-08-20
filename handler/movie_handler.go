@@ -42,7 +42,6 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 
 		movies, err := h.service.GetAllMoviesWithYear(year)
 		if err != nil {
-
 			http.Error(w, fmt.Sprintf("Something happend: %s", err), http.StatusBadRequest)
 			return
 		}
@@ -50,7 +49,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(movies)
 		return
 	}
-	//not yet ready
+
 	if actor := query.Get("actor"); actor != "" {
 		actorID, err := strconv.Atoi(actor)
 		if err != nil {
@@ -60,7 +59,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 
 		movies, err := h.service.GetAllMoviesWithActor(actorID)
 		if err != nil {
-			http.Error(w, "Failed to get movies", http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Failed to get movies: %s", err), http.StatusInternalServerError)
 			return
 		}
 
