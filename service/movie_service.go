@@ -33,8 +33,15 @@ func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]m.Movie, error) {
 }
 
 func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.Movie, error) {
-	s.repo.FindMoviesByYear(year)
-	return []m.Movie{}, nil
+	if year < 1885 || year > 2050 || year == 0 {
+		return []m.Movie{}, fmt.Errorf("Invalid release year.")
+	}
+
+	movies, err := s.repo.FindMoviesByYear(year)
+	if err != nil {
+		return []m.Movie{}, err
+	}
+	return movies, nil
 }
 
 func (s *MovieService) GetAllMoviesWithActor(actorID int) ([]m.Movie, error) {

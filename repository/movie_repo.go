@@ -95,6 +95,7 @@ func (r movieRepository) FindMovieByID(movieId int) (models.Movie, error) {
 func (r movieRepository) ReplaceFieldsInMovie(movieId int, filedsToUpdate map[string]string) (models.Movie, bool) {
 	return models.Movie{}, false
 }
+
 func (r movieRepository) DeleteMovieByID(movieId int) (bool, error) {
 	query := `
 		DELETE FROM movies
@@ -117,12 +118,48 @@ func (r movieRepository) DeleteMovieByID(movieId int) (bool, error) {
 
 	return true, nil
 }
+
 func (r movieRepository) FindMoviesByGenre(genreId int) ([]models.Movie, error) {
 	return []models.Movie{}, nil
 }
+
 func (r movieRepository) FindMoviesByYear(year int) ([]models.Movie, error) {
-	return []models.Movie{}, nil
+	query := `
+		SELECT id, title, release_year, duration
+		FROM movies
+		WHERE release_year = ?
+	`
+
+	movies := []m.Movie{}
+	res, err := r.db.Query(query, year)
+	if err != nil {
+		return movies, err
+	}
+	defer res.Close()
+
+	for res.Next() {
+		movie := models.Movie{}
+		err := res.Scan(
+			&movie.Id,
+			&movie.Title,
+			&movie.ReleaseYear,
+			&movie.Duration,
+		)
+
+		if err != nil {
+			return []models.Movie{}, fmt.Errorf("Something happened during query execution: %w", err)
+		}
+
+		movies = append(movies, movie)
+	}
+
+	if err := res.Err(); err != nil {
+		return nil, fmt.Errorf("Error while iterating movies: %w", err)
+	}
+
+	return movies, nil
 }
+
 func (r movieRepository) FindMoviesWithActor(actorId int) ([]models.Movie, error) {
 	return []models.Movie{}, nil
 }

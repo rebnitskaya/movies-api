@@ -13,24 +13,57 @@ import (
 func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 
+	w.Header().Set("Content-Type", "application/json")
+
 	if genre := query.Get("genre"); genre != "" {
-		// Retrieve movies filtered by genre
-		genreId := 0
-		h.service.GetAllMoviesWithGenre(genreId)
+		genreID, err := strconv.Atoi(genre)
+		if err != nil {
+			http.Error(w, "Wrong genre id format", http.StatusBadRequest)
+			return
+		}
+
+		movies, err := h.service.GetAllMoviesWithGenre(genreID)
+		if err != nil {
+			http.Error(w, "Failed to get movies", http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(movies)
 		return
 	}
 
 	if year := query.Get("year"); year != "" {
-		// Retrieve movies filtered by release year
-		year := 0
-		h.service.GetAllMoviesWithYear(year)
+		year, err := strconv.Atoi(year)
+		if err != nil {
+			http.Error(w, "Wrong year format.", http.StatusBadRequest)
+			return
+		}
+
+		movies, err := h.service.GetAllMoviesWithYear(year)
+		if err != nil {
+
+			http.Error(w, fmt.Sprintf("Something happend: %s", err), http.StatusBadRequest)
+			return
+		}
+
+		json.NewEncoder(w).Encode(movies)
 		return
 	}
 
 	if actor := query.Get("actor"); actor != "" {
-		// Retrieve movies that the actor with the given id has starred in
-		actorId := 0
-		h.service.GetAllMoviesWithActor(actorId)
+		actorID, err := strconv.Atoi(actor)
+		if err != nil {
+			http.Error(w, "Wrong actor id format", http.StatusBadRequest)
+			return
+		}
+
+		movies, err := h.service.GetAllMoviesWithActor(actorID)
+		if err != nil {
+			http.Error(w, "Failed to get movies", http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(movies)
 		return
 	}
 
@@ -40,12 +73,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-
-	err = json.NewEncoder(w).Encode(movies)
-	if err != nil {
-		return
-	}
+	json.NewEncoder(w).Encode(movies)
 }
 
 func (h *MovieHandler) GetMovie(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +90,7 @@ func (h *MovieHandler) GetMovie(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Error(w, "Failed to get movie: %s", http.StatusInternalServerError)
+		http.Error(w, "Failed to get movie", http.StatusInternalServerError)
 		return
 	}
 
