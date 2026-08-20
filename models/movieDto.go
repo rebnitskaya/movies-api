@@ -5,11 +5,12 @@ import (
 )
 
 type MovieDto struct {
-	Title       string  `json:"title"`
-	ReleaseYear int     `json:"releaseYear"`
-	Duration    int     `json:"duration"`
-	Genres      []Genre `json:"genres"`
-	Actors      []Actor `json:"actors"`
+	Id          int              `json:"id"`
+	Title       string           `json:"title"`
+	ReleaseYear int              `json:"releaseYear"`
+	Duration    int              `json:"duration"`
+	Genres      []Genre          `json:"genres"`
+	Actors      []ActorInFilmDto `json:"actors"`
 }
 
 type MoviePatchDto struct {

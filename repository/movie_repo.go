@@ -8,41 +8,77 @@ import (
 	"strings"
 )
 
-func (r movieRepository) FindAllMovies() ([]models.Movie, error) {
+func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
 	query := `
-		SELECT id, title, release_year, duration
-		FROM movies
+		SELECT m.id, m.title, m.release_year, m.duration, a.id, a.name, a.birth_date
+		FROM movies m
+		LEFT JOIN movie_actors ma ON ma.movie_id = m.id
+		LEFT JOIN actors a ON a.id = ma.actor_id
 	`
 
-	res, err := r.db.Query(query)
+	rows, err := r.db.Query(query)
 	if err != nil {
-		return []models.Movie{}, err
+		return []models.MovieDto{}, err
 	}
 
-	defer res.Close()
+	moviesMap := make(map[int]*models.MovieDto)
 
-	movies := []models.Movie{}
-	for res.Next() {
-		movie := models.Movie{}
+	for rows.Next() {
+		var movieID int
+		var title string
+		var releaseYear int
+		var duration int
 
-		err := res.Scan(
-			&movie.Id,
-			&movie.Title,
-			&movie.ReleaseYear,
-			&movie.Duration,
+		var actorID sql.NullInt64
+		var actorName sql.NullString
+		var actorBirthDate sql.NullString
+
+		err := rows.Scan(
+			&movieID,
+			&title,
+			&releaseYear,
+			&duration,
+			&actorID,
+			&actorName,
+			&actorBirthDate,
 		)
 
 		if err != nil {
-			return []models.Movie{}, fmt.Errorf("Something happened during query execution: %w", err)
+			return []models.MovieDto{}, fmt.Errorf("Something happened during query execution: %w", err)
 		}
 
-		movies = append(movies, movie)
+		movie, exists := moviesMap[movieID]
+
+		if !exists {
+			movie = &models.MovieDto{
+				Id:          movieID,
+				Title:       title,
+				ReleaseYear: releaseYear,
+				Duration:    duration,
+			}
+
+			moviesMap[movieID] = movie
+		}
+
+		if actorID.Valid {
+			movie.Actors = append(movie.Actors, m.ActorInFilmDto{
+				Id:        int(actorID.Int64),
+				Name:      actorName.String,
+				BirthDate: actorBirthDate.String,
+			})
+		}
 	}
 
-	if err := res.Err(); err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("Error while iterating movies: %w", err)
 	}
 
+	movies := make([]m.MovieDto, 0, len(moviesMap))
+	for _, v := range moviesMap {
+		movies = append(movies, *v)
+	}
+
+	fmt.Println(movies)
 	return movies, nil
 }
 
@@ -70,24 +106,59 @@ func (r movieRepository) CreateMovie(movieData models.MovieDto) (models.Movie, e
 	return movie, nil
 }
 
-func (r movieRepository) FindMovieByID(movieID int) (models.Movie, error) {
+func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
 	query := `
-		SELECT id, title, release_year, duration
-		FROM movies
-		WHERE id = ?
+		SELECT m.id, m.title, m.release_year, m.duration, a.id, a.name, a.birth_date
+		FROM movies m
+		LEFT JOIN movie_actors ma ON ma.movie_id = m.id
+		LEFT JOIN actors a ON a.id = ma.actor_id
+		WHERE m.id = ?
 	`
 
-	var movie m.Movie
+	var movie m.MovieDto
+	found := false
 
-	err := r.db.QueryRow(query, movieID).Scan(
-		&movie.Id,
-		&movie.Title,
-		&movie.ReleaseYear,
-		&movie.Duration,
-	)
-
+	rows, err := r.db.Query(query, movieID)
 	if err != nil {
-		return m.Movie{}, fmt.Errorf("Something happened during query execution: %w", err)
+		return m.MovieDto{}, fmt.Errorf("Failed to find movie: %w", err)
+	}
+
+	for rows.Next() {
+		found = true
+
+		//in case if there is no actor in film
+		var actorID sql.NullInt64
+		var actorName sql.NullString
+		var actorBirthDate sql.NullString
+
+		err := rows.Scan(
+			&movie.Id,
+			&movie.Title,
+			&movie.ReleaseYear,
+			&movie.Duration,
+			&actorID,
+			&actorName,
+			&actorBirthDate,
+		)
+		if err != nil {
+			return m.MovieDto{}, fmt.Errorf("Something happened during query execution: %w", err)
+		}
+
+		if actorID.Valid {
+			movie.Actors = append(movie.Actors, m.ActorInFilmDto{
+				Id:        int(actorID.Int64),
+				Name:      actorName.String,
+				BirthDate: actorBirthDate.String,
+			})
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return m.MovieDto{}, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	if !found {
+		return m.MovieDto{}, sql.ErrNoRows
 	}
 
 	return movie, nil
