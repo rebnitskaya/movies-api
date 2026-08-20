@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"movies_api/models"
 	m "movies_api/models"
+	"strings"
 )
 
 func (r movieRepository) FindAllMovies() ([]models.Movie, error) {
@@ -92,8 +93,47 @@ func (r movieRepository) FindMovieByID(movieId int) (models.Movie, error) {
 	return movie, nil
 }
 
-func (r movieRepository) ReplaceFieldsInMovie(movieId int, filedsToUpdate map[string]string) (models.Movie, bool) {
-	return models.Movie{}, false
+func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[string]any) (models.Movie, error) {
+	alowedToChange := map[string]bool{
+		"title":        true,
+		"release_year": true,
+		"duration":     true,
+	}
+
+	setFields := make([]string, 0, len(filedsToUpdate))
+	args := make([]any, 0, len(filedsToUpdate))
+
+	for field, value := range filedsToUpdate {
+		if !alowedToChange[field] {
+			return m.Movie{}, fmt.Errorf("Not allowed to change the field: %s", field)
+		}
+
+		setFields = append(setFields, field+" = ?")
+		args = append(args, value)
+	}
+
+	query := `
+		UPDATE movies
+		SET ` + strings.Join(setFields, ", ") + `
+		WHERE id = ?
+		RETURNING id, title, release_year, duration
+	`
+
+	args = append(args, movieID)
+
+	var movie m.Movie
+	err := r.db.QueryRow(query, args...).Scan(
+		&movie.Id,
+		&movie.Title,
+		&movie.ReleaseYear,
+		&movie.Duration,
+	)
+
+	if err != nil {
+		return m.Movie{}, fmt.Errorf("Failed to update movie: %w", err)
+	}
+
+	return movie, nil
 }
 
 func (r movieRepository) DeleteMovieByID(movieId int) (bool, error) {

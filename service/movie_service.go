@@ -72,10 +72,31 @@ func (s *MovieService) MovieMaker(movieData m.MovieDto) (m.Movie, error) {
 	return movie, nil
 }
 
-func (s *MovieService) MoviePatcher(movieData m.Movie) (m.Movie, error) {
-	fields := make(map[string]string)
-	s.repo.ReplaceFieldsInMovie(movieData.Id, fields)
-	return m.Movie{}, nil
+func (s *MovieService) MoviePatcher(movieData m.MoviePatchDto, movieID int) (m.Movie, error) {
+	fields := make(map[string]any)
+	_, err := movieData.Validate()
+	if err != nil {
+		return m.Movie{}, err
+	}
+
+	if movieData.Title != nil {
+		fields["title"] = *movieData.Title
+	}
+
+	if movieData.Duration != nil {
+		fields["duration"] = *movieData.Duration
+	}
+
+	if movieData.ReleaseYear != nil {
+		fields["release_year"] = *movieData.ReleaseYear
+	}
+
+	if len(fields) == 0 {
+		return m.Movie{}, fmt.Errorf("No fields to update.")
+	}
+
+	movie, err := s.repo.ReplaceFieldsInMovie(movieID, fields)
+	return movie, nil
 }
 
 func (s *MovieService) DeleteMovie(movieID int) (bool, error) {

@@ -15,6 +15,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
+	//not yet ready
 	if genre := query.Get("genre"); genre != "" {
 		genreID, err := strconv.Atoi(genre)
 		if err != nil {
@@ -49,7 +50,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(movies)
 		return
 	}
-
+	//not yet ready
 	if actor := query.Get("actor"); actor != "" {
 		actorID, err := strconv.Atoi(actor)
 		if err != nil {
@@ -122,10 +123,30 @@ func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(m)
 }
 
+// not yet ready
 func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) {
-	data := m.Movie{}
-	h.service.MoviePatcher(data)
-	w.WriteHeader(http.StatusNoContent)
+	movieId, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "Wrong movie id format", http.StatusBadRequest)
+		return
+	}
+	data := m.MoviePatchDto{}
+
+	err = json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Something wrong with incoming data. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	movie, err := h.service.MoviePatcher(data, movieId)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Something wrong during request execution: %s", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "aplication/json")
+	w.WriteHeader(http.StatusAccepted)
+	json.NewEncoder(w).Encode(movie)
 }
 
 func (h *MovieHandler) DeleteMovie(w http.ResponseWriter, r *http.Request) {
@@ -154,6 +175,7 @@ func (h *MovieHandler) DeleteMovie(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// not yet ready
 // Retrieve all actors starring in a movie
 func (h *MovieHandler) GetActorsInMovie(w http.ResponseWriter, r *http.Request) {
 	movieId := 0
