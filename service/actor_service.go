@@ -4,7 +4,6 @@ import (
 	"fmt"
 	m "movies_api/models"
 	r "movies_api/repository"
-	"time"
 )
 
 type ActorService struct {
@@ -12,35 +11,35 @@ type ActorService struct {
 }
 
 func (s *ActorService) GetAllActors() ([]m.Actor, error) {
-	return []m.Actor{}, nil
+	actors, err := s.repo.FindAllActors()
+	if err != nil {
+		return nil, err
+	}
+	return actors, nil
 }
 
-func (s *ActorService) CreateActor(actorData m.Actor) (bool, error) {
-	minDate := time.Date(
-		1895, 12, 28,
-		0, 0, 0, 0,
-		time.UTC,
-	)
-
-	birthDate, err := time.Parse("2006-01-02", actorData.BirthDate)
+func (s *ActorService) CreateActor(actorData m.ActorDto) (bool, error) {
+	_, err := actorData.Validate()
 	if err != nil {
-		return false, fmt.Errorf("Actors birth date must be in YYYY-MM-DD format: %w", err)
+		return false, err
 	}
 
-	if birthDate.Before(minDate) {
-		return false, fmt.Errorf("There was no actors back then.")
+	actorExist, err := s.repo.FindActorByNameAndBirthDate(actorData.Name, actorData.BirthDate)
+	if err != nil {
+		return false, err
 	}
 
-	if birthDate.After(time.Now()) {
-		return false, fmt.Errorf("Actors birth date can't be in the future.")
-	}
-
-	actor, err := s.repo.FindActorByNameAndBirthDate(actorData.Name, actorData.BirthDate)
-	if actor.BirthDate == actorData.BirthDate && actor.Name == actorData.Name {
+	if actorExist.BirthDate == actorData.BirthDate && actorExist.Name == actorData.Name {
 		return false, fmt.Errorf("This actor already has been made before.")
 	}
 
-	ok, err := s.repo.CreateActor(actorData)
+	actor := m.Actor{
+		Name:      actorData.Name,
+		BirthDate: actorData.BirthDate,
+		Movies:    actorData.Movies,
+	}
+
+	ok, err := s.repo.CreateActor(actor)
 	if err != nil {
 		return false, err
 	}
@@ -48,24 +47,42 @@ func (s *ActorService) CreateActor(actorData m.Actor) (bool, error) {
 	return ok, nil
 }
 
-func (s *ActorService) DeleteActor(id int) (bool, error) {
-	s.repo.DeleteActorByID(id)
-	return false, nil
+func (s *ActorService) DeleteActor(id int) error {
+	deleted, err := s.repo.DeleteActorByID(id)
+	if err != nil {
+		return err
+	}
+	if !deleted {
+		return fmt.Errorf("Actor not found")
+	}
+	return nil
 }
 
 func (s *ActorService) GetActor(id int) (m.Actor, error) {
-	s.repo.DeleteActorByID(id)
-	return m.Actor{}, nil
+	actor, err := s.repo.FindActorByID(id)
+	if err != nil {
+		return m.Actor{}, err
+	}
+	return actor, nil
 }
 
-func (s *ActorService) PatchActor(actorData string) (m.Actor, error) {
-	actorId := 0
-	data := make(map[string]string)
-	s.repo.ReplaceFieldsInActor(actorId, data)
-	return m.Actor{}, nil
+func (s *ActorService) PatchActor(actorId int, data map[string]string) (m.Actor, error) {
+	err := m.ValidatePatchActor(data)
+	if err != nil {
+		return m.Actor{}, err
+	}
+
+	actor, err := s.repo.ReplaceFieldsInActor(actorId, data)
+	if err != nil {
+		return m.Actor{}, err
+	}
+	return actor, nil
 }
 
 func (s *ActorService) GetActorsWithName(name string) ([]m.Actor, error) {
-	s.repo.FindActorsByName(name)
-	return []m.Actor{}, nil
+	actors, err := s.repo.FindActorsByName(name)
+	if err != nil {
+		return nil, err
+	}
+	return actors, nil
 }
