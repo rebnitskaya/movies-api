@@ -59,11 +59,6 @@ func (s *MovieService) GetAllMoviesWithActor(actorID int) ([]m.MovieDto, error) 
 	return movies, nil
 }
 
-func (s *MovieService) GetActorsInMovie(movieId int) ([]m.Actor, error) {
-	s.repo.FindAllActorsInMovie(movieId)
-	return []m.Actor{}, nil
-}
-
 func (s *MovieService) MovieMaker(movieData m.MovieDto) (m.Movie, error) {
 	_, err := movieData.Validate()
 	if err != nil {
@@ -122,9 +117,13 @@ func (s *MovieService) DeleteMovie(movieID int) (bool, error) {
 	return ok, nil
 }
 
-func (s *MovieService) FindActorsInMovie(movieID int) ([]m.Actor, error) {
-	s.repo.FindAllActorsInMovie(movieID)
-	return []m.Actor{}, nil
+func (s *MovieService) FindActorsInMovie(movieID int) ([]m.ActorInFilmDto, error) {
+	movies, err := s.repo.FindAllActorsInMovie(movieID)
+	if err != nil {
+		return []m.ActorInFilmDto{}, err
+	}
+
+	return movies, nil
 }
 
 func (s *MovieService) AddActorToMovie(movieID, actorID int) (m.MovieDto, error) {

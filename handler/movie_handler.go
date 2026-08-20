@@ -186,6 +186,10 @@ func (h *MovieHandler) PostActorToMovie(w http.ResponseWriter, r *http.Request) 
 	}
 
 	movie, err := h.service.AddActorToMovie(movieID, actorID)
+	if err != nil {
+		http.Error(w, "Failed to add actor to movie: %s", http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "aplication/json")
 	w.WriteHeader(http.StatusOK)
@@ -205,6 +209,10 @@ func (h *MovieHandler) DeleteActorFromMovie(w http.ResponseWriter, r *http.Reque
 	}
 
 	movie, err := h.service.DeleteActorFromMovie(movieID, actorID)
+	if err != nil {
+		http.Error(w, "Failed to delete actor from movie: %s", http.StatusInternalServerError)
+		return
+	}
 
 	w.Header().Set("Content-Type", "aplication/json")
 	w.WriteHeader(http.StatusOK)
@@ -214,7 +222,24 @@ func (h *MovieHandler) DeleteActorFromMovie(w http.ResponseWriter, r *http.Reque
 // not yet ready
 // Retrieve all actors starring in a movie
 func (h *MovieHandler) GetActorsInMovie(w http.ResponseWriter, r *http.Request) {
-	movieId := 0
-	h.service.FindActorsInMovie(movieId)
-	w.WriteHeader(http.StatusNoContent)
+	movieID, err := strconv.Atoi(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "Wrong movie id format", http.StatusBadRequest)
+		return
+	}
+
+	movies, err := h.service.FindActorsInMovie(movieID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Movies with actor not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "Failed to delete actor from movie: %s", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "aplication/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(movies)
 }

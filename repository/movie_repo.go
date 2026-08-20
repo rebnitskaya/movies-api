@@ -242,15 +242,15 @@ func (r movieRepository) FindMoviesByYear(year int) ([]models.Movie, error) {
 	`
 
 	movies := []m.Movie{}
-	res, err := r.db.Query(query, year)
+	rows, err := r.db.Query(query, year)
 	if err != nil {
 		return movies, err
 	}
-	defer res.Close()
+	defer rows.Close()
 
-	for res.Next() {
+	for rows.Next() {
 		movie := models.Movie{}
-		err := res.Scan(
+		err := rows.Scan(
 			&movie.Id,
 			&movie.Title,
 			&movie.ReleaseYear,
@@ -264,7 +264,7 @@ func (r movieRepository) FindMoviesByYear(year int) ([]models.Movie, error) {
 		movies = append(movies, movie)
 	}
 
-	if err := res.Err(); err != nil {
+	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("Error while iterating movies: %w", err)
 	}
 
@@ -284,6 +284,8 @@ func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, er
 	if err != nil {
 		return []models.MovieDto{}, err
 	}
+
+	defer rows.Close()
 
 	moviesMap := make(map[int]*models.MovieDto)
 
@@ -345,8 +347,47 @@ func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, er
 	return movies, nil
 }
 
-func (r movieRepository) FindAllActorsInMovie(movieID int) ([]models.Actor, error) {
-	return []models.Actor{}, nil
+func (r movieRepository) FindAllActorsInMovie(movieID int) ([]models.ActorInFilmDto, error) {
+	query := `
+		SELECT a.id, a.name, a.birth_date
+		FROM movie_actors ma
+		JOIN actors a ON a.id = ma.actor_id
+		WHERE ma.movie_id = ?
+	`
+
+	rows, err := r.db.Query(query, movieID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var actors []models.ActorInFilmDto
+	found := false
+	for rows.Next() {
+		var actor m.ActorInFilmDto
+		found = true
+		err := rows.Scan(
+			&actor.Id,
+			&actor.Name,
+			&actor.BirthDate,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("Something happened during query execution: %w", err)
+		}
+
+		actors = append(actors, actor)
+	}
+
+	if !found {
+		return nil, sql.ErrNoRows
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("Error while iterating movies: %w", err)
+	}
+
+	return actors, nil
 }
 
 func (r movieRepository) FindMovieByTitleAndYear(title string, year int) (models.Movie, error) {
