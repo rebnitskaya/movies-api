@@ -10,12 +10,32 @@ type ActorService struct {
 	repo r.ActorRepository
 }
 
-func (s *ActorService) GetAllActors() ([]m.Actor, error) {
+func (s *ActorService) GetAllActors() ([]m.ActorWithoutMoviesDto, error) {
 	actors, err := s.repo.FindAllActors()
 	if err != nil {
 		return nil, err
 	}
-	return actors, nil
+	result := make([]m.ActorWithoutMoviesDto, 0, len(actors))
+	for _, actor := range actors {
+		actorDTO := m.ActorWithoutMoviesDto{
+			Id:        actor.Id,
+			Name:      actor.Name,
+			BirthDate: actor.BirthDate,
+			Movies:    []m.MovieWithoutActorsDto{},
+		}
+
+		for _, movie := range actor.Movies {
+			actorDTO.Movies = append(actorDTO.Movies, m.MovieWithoutActorsDto{
+				Id:          movie.Id,
+				Title:       movie.Title,
+				ReleaseYear: movie.ReleaseYear,
+				Duration:    movie.Duration,
+			})
+
+		}
+		result = append(result, actorDTO)
+	}
+	return result, nil
 }
 
 func (s *ActorService) CreateActor(actorData m.ActorDto) (bool, error) {

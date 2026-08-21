@@ -19,6 +19,13 @@ type MoviePatchDto struct {
 	ReleaseYear *int    `json:"releaseYear"`
 }
 
+type MovieWithoutActorsDto struct {
+	Id          int    `json:"id"`
+	Title       string `json:"title"`
+	ReleaseYear int    `json:"releaseYear"`
+	Duration    int    `json:"duration"`
+}
+
 func (m MovieDto) Validate() (bool, error) {
 	if m.Title == "" {
 		return false, fmt.Errorf("Title can't be empty.")
