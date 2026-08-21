@@ -78,12 +78,28 @@ func (s *ActorService) DeleteActor(id int) error {
 	return nil
 }
 
-func (s *ActorService) GetActor(id int) (m.Actor, error) {
+func (s *ActorService) GetActor(id int) (m.ActorWithoutMoviesDto, error) {
 	actor, err := s.repo.FindActorByID(id)
 	if err != nil {
-		return m.Actor{}, err
+		return m.ActorWithoutMoviesDto{}, err
 	}
-	return actor, nil
+
+	actorDTO := m.ActorWithoutMoviesDto{
+		Id:        actor.Id,
+		Name:      actor.Name,
+		BirthDate: actor.BirthDate,
+		Movies:    []m.MovieWithoutActorsDto{},
+	}
+
+	for _, movie := range actor.Movies {
+		actorDTO.Movies = append(actorDTO.Movies, m.MovieWithoutActorsDto{
+			Id:          movie.Id,
+			Title:       movie.Title,
+			ReleaseYear: movie.ReleaseYear,
+			Duration:    movie.Duration,
+		})
+	}
+	return actorDTO, nil
 }
 
 func (s *ActorService) PatchActor(actorId int, data map[string]string) (m.Actor, error) {
