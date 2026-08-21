@@ -11,6 +11,12 @@ type ActorDto struct {
 	Movies    []Movie `json:"movies"`
 }
 
+type ActorInFilmDto struct {
+	Id        int    `json:"id"`
+	Name      string `json:"name"`
+	BirthDate string `json:"birthDate"`
+}
+
 func (m ActorDto) Validate() (bool, error) {
 	minDate := time.Date(
 		1895, 12, 28,
