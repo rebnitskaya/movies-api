@@ -12,6 +12,7 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 		FROM actors a
 		LEFT JOIN movie_actors ma ON a.id = ma.actor_id
 		LEFT JOIN movies m ON ma.movie_id = m.id
+		ORDER by a.id
 	`
 
 	rows, err := r.db.Query(query)
