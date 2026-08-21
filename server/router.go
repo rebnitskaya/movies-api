@@ -2,6 +2,7 @@ package server
 
 import (
 	h "movies_api/handler"
+	"movies_api/middleware"
 	"net/http"
 )
 
@@ -9,7 +10,7 @@ func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandl
 	mux.HandleFunc("/api", h.HandleRoot)
 
 	//actors
-	mux.HandleFunc("POST /api/actors", actorHandler.PostActor)
+	mux.HandleFunc("POST /api/actors", middleware.GlobalErrorHandler(actorHandler.PostActor))
 	mux.HandleFunc("GET /api/actors", actorHandler.GetAllActors)
 	mux.HandleFunc("GET /api/actors/{id}", actorHandler.GetActor)
 	mux.HandleFunc("PATCH /api/actors/{id}", actorHandler.PatchActor)

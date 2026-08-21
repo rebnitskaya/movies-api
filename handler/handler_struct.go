@@ -1,6 +1,11 @@
 package handler
 
-import "movies_api/service"
+import (
+	"movies_api/service"
+	"net/http"
+)
+
+type AppHandler func(w http.ResponseWriter, r *http.Request) error
 
 type MovieHandler struct {
 	service *service.MovieService
