@@ -219,8 +219,6 @@ func (h *MovieHandler) DeleteActorFromMovie(w http.ResponseWriter, r *http.Reque
 	json.NewEncoder(w).Encode(movie)
 }
 
-// not yet ready
-// Retrieve all actors starring in a movie
 func (h *MovieHandler) GetActorsInMovie(w http.ResponseWriter, r *http.Request) {
 	movieID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
