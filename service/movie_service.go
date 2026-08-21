@@ -31,9 +31,15 @@ func (s *MovieService) FindOneMovie(id int) (m.MovieDto, error) {
 	return movie, nil
 }
 
-func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]m.Movie, error) {
-	s.repo.FindMoviesByGenre(genreID)
-	return []m.Movie{}, nil
+func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]m.MovieDto, error) {
+	movies, err := s.repo.FindMoviesByGenre(genreID)
+	if err != nil {
+		return []m.MovieDto{}, err
+	}
+
+	sortMovies(movies)
+
+	return movies, nil
 }
 
 func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.Movie, error) {
