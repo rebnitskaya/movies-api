@@ -13,14 +13,24 @@ func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
 
 	// Retrieve actors filtered by name
 	if name := query.Get("name"); name != "" {
-		h.service.GetActorsWithName(name)
+		actors, err := h.service.GetActorsWithName(name)
+		if err != nil {
+			http.Error(w, "Failed to get actors", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+
+		err = json.NewEncoder(w).Encode(actors)
+		if err != nil {
+			return
+		}
 
 		return
 	}
 
 	actors, err := h.service.GetAllActors()
 	if err != nil {
-		http.Error(w, "Failed to get movies", http.StatusInternalServerError)
+		http.Error(w, "Failed to get actors", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -32,9 +42,13 @@ func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ActorHandler) PostActor(w http.ResponseWriter, r *http.Request) {
-	var actorData m.Actor
+	var actorData m.ActorDto
 
 	err := json.NewDecoder(r.Body).Decode(&actorData)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
 
 	ok, err := h.service.CreateActor(actorData)
 	if err != nil {
@@ -51,13 +65,13 @@ func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to delete an actor. %s", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Invalid actor id. %s", err), http.StatusBadRequest)
 		return
 	}
 
-	_, err = h.service.DeleteActor(idInt)
+	err = h.service.DeleteActor(idInt)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to delete an actor. %s", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to delete an actor. %s", err), http.StatusNotFound)
 		return
 	}
 
@@ -65,13 +79,50 @@ func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *ActorHandler) GetActor(w http.ResponseWriter, r *http.Request) {
-	actorId := 0
-	h.service.GetActor(actorId)
-	w.WriteHeader(http.StatusNoContent)
+	id := r.PathValue("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get an actor. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	actor, err := h.service.GetActor(idInt)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to get an actor. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	err = json.NewEncoder(w).Encode(actor)
+	if err != nil {
+		return
+	}
 }
 
 func (h *ActorHandler) PatchActor(w http.ResponseWriter, r *http.Request) {
-	data := ""
-	h.service.PatchActor(data)
-	w.WriteHeader(http.StatusNoContent)
+	id := r.PathValue("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid actor id. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	data := make(map[string]string)
+
+	err = json.NewDecoder(r.Body).Decode(&data)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid request body. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	actor, err := h.service.PatchActor(idInt, data)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to update an actor. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(actor)
+
 }

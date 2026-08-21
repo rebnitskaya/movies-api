@@ -34,8 +34,8 @@ type ActorRepository interface {
 	CreateActor(m.Actor) (bool, error)
 	FindActorByNameAndBirthDate(string, string) (m.Actor, error)
 	DeleteActorByID(int) (bool, error)
-	FindActorByID(int) (m.Actor, bool)
-	ReplaceFieldsInActor(int, map[string]string) (m.Actor, bool)
+	FindActorByID(int) (m.Actor, error)
+	ReplaceFieldsInActor(int, map[string]string) (m.Actor, error)
 	FindActorsByName(string) ([]m.Actor, error)
 }
 
@@ -48,13 +48,16 @@ type GenreRepository interface {
 }
 
 type MovieRepository interface {
-	FindAllMovies() ([]m.Movie, error)
+	FindAllMovies() ([]m.MovieDto, error)
 	CreateMovie(m.MovieDto) (m.Movie, error)
-	FindMovieByID(int) (m.Movie, bool)
-	ReplaceFieldsInMovie(int, map[string]string) (m.Movie, bool)
+	FindMovieByID(int) (m.MovieDto, error)
+	ReplaceFieldsInMovie(int, map[string]any) (m.Movie, error)
 	DeleteMovieByID(int) (bool, error)
-	FindMoviesByGenre(int) ([]m.Movie, error)
+	FindMoviesByGenre(int) ([]m.MovieDto, error)
 	FindMoviesByYear(int) ([]m.Movie, error)
-	FindMoviesWithActor(int) ([]m.Movie, error)
-	FindAllActorsInMovie(int) ([]m.Actor, error)
+	FindMoviesWithActor(int) ([]m.MovieDto, error)
+	FindAllActorsInMovie(int) ([]m.ActorInFilmDto, error)
+	FindMovieByTitleAndYear(string, int) (m.Movie, error)
+	AddActorToMovie(int, int) error
+	RemoveActorFromMovie(int, int) error
 }
