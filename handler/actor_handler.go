@@ -20,11 +20,7 @@ func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 
-		err = json.NewEncoder(w).Encode(actors)
-		if err != nil {
-			return
-		}
-
+		json.NewEncoder(w).Encode(actors)
 		return
 	}
 

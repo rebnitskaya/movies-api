@@ -1,6 +1,9 @@
 package service
 
 import (
+	"database/sql"
+	"errors"
+	"fmt"
 	m "movies_api/models"
 	r "movies_api/repository"
 )
@@ -20,9 +23,22 @@ func (s *GenreService) GetGenre(id int) (m.Genre, error) {
 }
 
 func (s *GenreService) CreateGenre(name string) (m.Genre, error) {
-	genre := m.Genre{}
-	s.repo.CreateGenre(genre)
-	return m.Genre{}, nil
+
+	_, err := s.repo.FindGenreByName(name)
+	if err == nil {
+		return m.Genre{}, fmt.Errorf("Genre already exists")
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return m.Genre{}, err
+	}
+
+	genre := m.Genre{Name: name}
+	createdGenre, err := s.repo.CreateGenre(genre)
+	if err != nil {
+		return m.Genre{}, err
+	}
+
+	return createdGenre, nil
 }
 
 func (s *GenreService) PatchGenre(id int, name string) (m.Genre, error) {

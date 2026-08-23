@@ -2,6 +2,8 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
+	m "movies_api/models"
 	"net/http"
 )
 
@@ -27,9 +29,23 @@ func (h *GenreHandler) GetGenre(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *GenreHandler) PostGenre(w http.ResponseWriter, r *http.Request) {
-	name := ""
-	h.service.CreateGenre(name)
-	w.WriteHeader(http.StatusNoContent)
+	var genre m.Genre
+	err := json.NewDecoder(r.Body).Decode(&genre)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	createdGenre, err := h.service.CreateGenre(genre.Name)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to make a genre. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(createdGenre)
+
 }
 
 func (h *GenreHandler) PatchGenre(w http.ResponseWriter, r *http.Request) {

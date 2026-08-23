@@ -41,10 +41,11 @@ type ActorRepository interface {
 
 type GenreRepository interface {
 	FindAllGenres() ([]m.Genre, error)
-	CreateGenre(m.Genre) (bool, error)
+	CreateGenre(m.Genre) (m.Genre, error)
 	FindGenreByID(int) (m.Genre, bool)
 	ReplaceFieldsInGenre(int, string) (m.Genre, bool)
 	DeleteGenreByID(int) (bool, error)
+	FindGenreByName(string) (m.Genre, error)
 }
 
 type MovieRepository interface {
