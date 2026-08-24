@@ -17,12 +17,24 @@ func (s *GenreService) GetAllGenres() ([]m.Genre, error) {
 	return []m.Genre{}, nil
 }
 
-func (s *GenreService) GetGenre(id int) (m.Genre, error) {
+func (s *GenreService) GetGenre(id int) (m.GenreDto, error) {
 	genre, err := s.repo.FindGenreByID(id)
 	if err != nil {
-		return m.Genre{}, err
+		return m.GenreDto{}, err
 	}
-	return genre, nil
+	genreDTO := m.GenreDto{
+		Id:     genre.Id,
+		Name:   genre.Name,
+		Movies: []m.MovieSummaryDto{},
+	}
+	for _, movie := range genre.Movies {
+		genreDTO.Movies = append(genreDTO.Movies, m.MovieSummaryDto{
+			Id:   movie.Id,
+			Name: movie.Title,
+		})
+
+	}
+	return genreDTO, nil
 }
 
 func (s *GenreService) CreateGenre(name string) (m.Genre, error) {
