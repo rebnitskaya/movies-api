@@ -23,8 +23,6 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 
 	actorsMap := make(map[int]*m.Actor)
 
-	var actorIDs []int
-
 	for rows.Next() {
 		var actor m.Actor
 
@@ -50,7 +48,6 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 		if _, exists := actorsMap[actor.Id]; !exists {
 			actor.Movies = []m.Movie{}
 			actorsMap[actor.Id] = &actor
-			actorIDs = append(actorIDs, actor.Id)
 		}
 
 		if movieID.Valid {
@@ -69,10 +66,10 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 		return nil, fmt.Errorf("Something happened during query execution: %w", err)
 	}
 
-	actors := make([]m.Actor, 0, len(actorIDs))
+	actors := make([]m.Actor, 0, len(actorsMap))
 
-	for _, id := range actorIDs {
-		actors = append(actors, *actorsMap[id])
+	for _, id := range actorsMap {
+		actors = append(actors, *id)
 	}
 
 	return actors, nil

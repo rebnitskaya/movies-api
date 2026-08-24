@@ -4,6 +4,7 @@ import (
 	"fmt"
 	m "movies_api/models"
 	r "movies_api/repository"
+	"sort"
 )
 
 type ActorService struct {
@@ -15,6 +16,11 @@ func (s *ActorService) GetAllActors() ([]m.ActorWithoutMoviesDto, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sort.Slice(actors, func(i, j int) bool {
+		return actors[i].Id < actors[j].Id
+	})
+
 	result := make([]m.ActorWithoutMoviesDto, 0, len(actors))
 	for _, actor := range actors {
 		actorDTO := m.ActorWithoutMoviesDto{

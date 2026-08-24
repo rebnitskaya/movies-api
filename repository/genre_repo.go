@@ -7,7 +7,73 @@ import (
 )
 
 func (r genreRepository) FindAllGenres() ([]m.Genre, error) {
-	return []m.Genre{}, nil
+	query := `
+	SELECT g.id, g.name, m.id, m.title, m.release_year, m.duration
+	FROM genres g
+	LEFT JOIN genres_movies mg ON g.id = mg.genre_id
+	LEFT JOIN movies m ON mg.movie_id = m.id
+	ORDER by g.id
+	`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+	defer rows.Close()
+
+	genresMap := make(map[int]*m.Genre)
+
+	for rows.Next() {
+		var genre m.Genre
+
+		var movieID sql.NullInt64
+		var movieTitle sql.NullString
+		var releaseYear sql.NullInt64
+		var duration sql.NullInt64
+
+		err := rows.Scan(
+			&genre.Id,
+			&genre.Name,
+			&movieID,
+			&movieTitle,
+			&releaseYear,
+			&duration,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("Something happened during query execution: %w", err)
+		}
+
+		existingGenre, exists := genresMap[genre.Id]
+
+		if !exists {
+			genre.Movies = []m.Movie{}
+			genresMap[genre.Id] = &genre
+			existingGenre = &genre
+
+		}
+
+		if movieID.Valid {
+			existingGenre.Movies = append(existingGenre.Movies, m.Movie{
+				Id:          int(movieID.Int64),
+				Title:       movieTitle.String,
+				ReleaseYear: int(releaseYear.Int64),
+				Duration:    int(duration.Int64),
+			})
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	genres := make([]m.Genre, 0, len(genresMap))
+
+	for _, genre := range genresMap {
+		genres = append(genres, *genre)
+	}
+
+	return genres, nil
 }
 
 func (r genreRepository) CreateGenre(genre m.Genre) (m.Genre, error) {
