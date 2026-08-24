@@ -43,15 +43,15 @@ func (h *ActorHandler) PostActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := h.service.CreateActor(actorData)
+	createdActor, err := h.service.CreateActor(actorData)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to make an actor. %s", err), http.StatusBadRequest)
 		return
 	}
 
-	if ok {
-		w.WriteHeader(http.StatusCreated)
-	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(createdActor)
 }
 
 func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {

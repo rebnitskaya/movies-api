@@ -78,18 +78,23 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 	return actors, nil
 }
 
-func (r actorRepository) CreateActor(actor m.Actor) (bool, error) {
+func (r actorRepository) CreateActor(actor m.Actor) (m.Actor, error) {
 	query := `
 		INSERT INTO actors (name, birth_date)
 		VALUES (?,?)
+		RETURNING id,  name, birth_date
 	`
 
-	_, err := r.db.Exec(query, actor.Name, actor.BirthDate)
+	err := r.db.QueryRow(query, actor.Name, actor.BirthDate).Scan(
+		&actor.Id,
+		&actor.Name,
+		&actor.BirthDate,
+	)
 	if err != nil {
-		return false, fmt.Errorf("Something happened during query execution: %w", err)
+		return m.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
 	}
 
-	return true, nil
+	return actor, nil
 }
 
 func (r actorRepository) FindActorByNameAndBirthDate(name string, birthDate string) (m.Actor, error) {

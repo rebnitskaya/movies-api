@@ -38,19 +38,19 @@ func (s *ActorService) GetAllActors() ([]m.ActorWithoutMoviesDto, error) {
 	return result, nil
 }
 
-func (s *ActorService) CreateActor(actorData m.ActorDto) (bool, error) {
+func (s *ActorService) CreateActor(actorData m.ActorDto) (m.Actor, error) {
 	_, err := actorData.Validate()
 	if err != nil {
-		return false, err
+		return m.Actor{}, err
 	}
 
 	actorExist, err := s.repo.FindActorByNameAndBirthDate(actorData.Name, actorData.BirthDate)
 	if err != nil {
-		return false, err
+		return m.Actor{}, err
 	}
 
 	if actorExist.BirthDate == actorData.BirthDate && actorExist.Name == actorData.Name {
-		return false, fmt.Errorf("This actor already has been made before.")
+		return m.Actor{}, fmt.Errorf("This actor already has been made before.")
 	}
 
 	actor := m.Actor{
@@ -59,12 +59,12 @@ func (s *ActorService) CreateActor(actorData m.ActorDto) (bool, error) {
 		Movies:    actorData.Movies,
 	}
 
-	ok, err := s.repo.CreateActor(actor)
+	createdActor, err := s.repo.CreateActor(actor)
 	if err != nil {
-		return false, err
+		return m.Actor{}, err
 	}
 
-	return ok, nil
+	return createdActor, nil
 }
 
 func (s *ActorService) DeleteActor(id int) error {
