@@ -21,15 +21,15 @@ type MoviePatchDto struct {
 
 func (m MovieDto) Validate() (bool, error) {
 	if m.Title == "" {
-		return false, fmt.Errorf("Title can't be empty.")
+		return false, fmt.Errorf("%w Title can't be empty.", ErrInvalidInput)
 	}
 
 	if m.ReleaseYear < 1885 || m.ReleaseYear > 2050 || m.ReleaseYear == 0 {
-		return false, fmt.Errorf("Invalid release year.")
+		return false, fmt.Errorf("%w Invalid release year. ", ErrInvalidInput)
 	}
 
 	if m.Duration <= 0 || m.Duration > 720 {
-		return false, fmt.Errorf("Invalid movie duration year.")
+		return false, fmt.Errorf("%w Invalid movie duration year.", ErrInvalidInput)
 	}
 
 	return true, nil
@@ -38,19 +38,19 @@ func (m MovieDto) Validate() (bool, error) {
 func (m MoviePatchDto) Validate() (bool, error) {
 	if m.Title != nil {
 		if *m.Title == "" {
-			return false, fmt.Errorf("Title can't be empty.")
+			return false, fmt.Errorf("%w Title can't be empty.", ErrInvalidInput)
 		}
 	}
 
 	if m.ReleaseYear != nil {
 		if *m.ReleaseYear < 1885 || *m.ReleaseYear > 2050 || *m.ReleaseYear == 0 {
-			return false, fmt.Errorf("Invalid release year.")
+			return false, fmt.Errorf("%w Invalid release year.", ErrInvalidInput)
 		}
 	}
 
 	if m.Duration != nil {
 		if *m.Duration <= 0 || *m.Duration > 720 {
-			return false, fmt.Errorf("Invalid movie duration year.")
+			return false, fmt.Errorf("%w Invalid movie duration year.", ErrInvalidInput)
 		}
 	}
 	return true, nil

@@ -73,7 +73,7 @@ func (s *MovieService) MovieMaker(movieData m.MovieDto) (m.Movie, error) {
 
 	res, err := s.repo.FindMovieByTitleAndYear(movieData.Title, movieData.ReleaseYear)
 	if res.Title == movieData.Title && res.ReleaseYear == movieData.ReleaseYear {
-		return m.Movie{}, fmt.Errorf("This movie already has been made before.")
+		return m.Movie{}, m.ErrMovieHasBeenMadeBefore
 	}
 	movie, error := s.repo.CreateMovie(movieData)
 	if error != nil {

@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
+func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 	query := r.URL.Query()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -19,61 +19,52 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) {
 	if genre := query.Get("genre"); genre != "" {
 		genreID, err := strconv.Atoi(genre)
 		if err != nil {
-			http.Error(w, "Wrong genre id format", http.StatusBadRequest)
-			return
+			return fmt.Errorf("%w Wrong genre id format: %s", m.ErrInvalidInput, err)
 		}
 
 		movies, err := h.service.GetAllMoviesWithGenre(genreID)
 		if err != nil {
-			http.Error(w, "Failed to get movies", http.StatusInternalServerError)
-			return
+			return fmt.Errorf("Failed to get movies %w", err)
 		}
 
-		json.NewEncoder(w).Encode(movies)
-		return
+		return json.NewEncoder(w).Encode(movies)
 	}
 
 	if year := query.Get("year"); year != "" {
 		year, err := strconv.Atoi(year)
 		if err != nil {
-			http.Error(w, "Wrong year format.", http.StatusBadRequest)
-			return
+			http.Error(w, "", http.StatusBadRequest)
+			return fmt.Errorf("%w Wrong year format: %s", m.ErrInvalidInput, err)
 		}
 
 		movies, err := h.service.GetAllMoviesWithYear(year)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Something happend: %s", err), http.StatusBadRequest)
-			return
+			return fmt.Errorf("Failed to get movies %w", err)
 		}
 
-		json.NewEncoder(w).Encode(movies)
-		return
+		return json.NewEncoder(w).Encode(movies)
 	}
 
 	if actor := query.Get("actor"); actor != "" {
 		actorID, err := strconv.Atoi(actor)
 		if err != nil {
-			http.Error(w, "Wrong actor id format", http.StatusBadRequest)
-			return
+			return fmt.Errorf("%w Wrong actor id format: %s", m.ErrInvalidInput, err)
 		}
 
 		movies, err := h.service.GetAllMoviesWithActor(actorID)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Failed to get movies: %s", err), http.StatusInternalServerError)
-			return
+			return fmt.Errorf("Failed to get movies %w", err)
 		}
 
-		json.NewEncoder(w).Encode(movies)
-		return
+		return json.NewEncoder(w).Encode(movies)
 	}
 
 	movies, err := h.service.GetAllMovies()
 	if err != nil {
-		http.Error(w, "Failed to get movies", http.StatusInternalServerError)
-		return
+		return fmt.Errorf("Failed to get movies %w", err)
 	}
 
-	json.NewEncoder(w).Encode(movies)
+	return json.NewEncoder(w).Encode(movies)
 }
 
 func (h *MovieHandler) GetMovie(w http.ResponseWriter, r *http.Request) {
@@ -102,24 +93,22 @@ func (h *MovieHandler) GetMovie(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) {
+func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) error {
 	movieDto := m.MovieDto{}
 
 	err := json.NewDecoder(r.Body).Decode(&movieDto)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Something wrong with incoming data. %s", err), http.StatusBadRequest)
-		return
+		return fmt.Errorf("Something wrong with incoming data: %s, %w", err, m.ErrInvalidInput)
 	}
 
 	m, error := h.service.MovieMaker(movieDto)
 	if error != nil {
-		http.Error(w, fmt.Sprintf("Failed to create a film. %s", error), http.StatusBadRequest)
-		return
+		return error
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(m)
+	return json.NewEncoder(w).Encode(m)
 }
 
 func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) {

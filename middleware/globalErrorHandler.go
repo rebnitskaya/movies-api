@@ -3,11 +3,11 @@ package middleware
 import (
 	"errors"
 	"log"
-	"movies_api/handler"
+	"movies_api/models"
 	"net/http"
 )
 
-func GlobalErrorHandler(h handler.AppHandler) http.HandlerFunc {
+func GlobalErrorHandler(h models.AppHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := h(w, r); err != nil {
 			handleError(w, err)
@@ -15,22 +15,19 @@ func GlobalErrorHandler(h handler.AppHandler) http.HandlerFunc {
 	}
 }
 
-var (
-	ErrMoviesNotFound = errors.New("Movie not found.")
-	ErrActorsNotFound = errors.New("Actors not found.")
-	ErrGenresNotFound = errors.New("Genres not found.")
-	ErrInvalidInput   = errors.New("Invalid input.")
-)
-
 func handleError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, ErrActorsNotFound):
+	case errors.Is(err, models.ErrActorsNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, ErrActorsNotFound):
+	case errors.Is(err, models.ErrMoviesNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, ErrGenresNotFound):
+	case errors.Is(err, models.ErrGenresNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, ErrInvalidInput):
+	case errors.Is(err, models.ErrInvalidInput):
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	case errors.Is(err, models.ErrBadRequest):
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	case errors.Is(err, models.ErrMovieHasBeenMadeBefore):
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 	default:
