@@ -42,7 +42,7 @@ type ActorRepository interface {
 type GenreRepository interface {
 	FindAllGenres() ([]m.Genre, error)
 	CreateGenre(m.Genre) (m.Genre, error)
-	FindGenreByID(int) (m.Genre, bool)
+	FindGenreByID(int) (m.Genre, error)
 	ReplaceFieldsInGenre(int, string) (m.Genre, bool)
 	DeleteGenreByID(int) (bool, error)
 	FindGenreByName(string) (m.Genre, error)

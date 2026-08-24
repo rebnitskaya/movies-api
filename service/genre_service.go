@@ -18,8 +18,11 @@ func (s *GenreService) GetAllGenres() ([]m.Genre, error) {
 }
 
 func (s *GenreService) GetGenre(id int) (m.Genre, error) {
-	s.repo.FindGenreByID(id)
-	return m.Genre{}, nil
+	genre, err := s.repo.FindGenreByID(id)
+	if err != nil {
+		return m.Genre{}, err
+	}
+	return genre, nil
 }
 
 func (s *GenreService) CreateGenre(name string) (m.Genre, error) {
@@ -46,7 +49,17 @@ func (s *GenreService) PatchGenre(id int, name string) (m.Genre, error) {
 	return m.Genre{}, nil
 }
 
-func (s *GenreService) DeleteGenre(id int) (m.Genre, error) {
-	s.repo.DeleteGenreByID(id)
-	return m.Genre{}, nil
+func (s *GenreService) DeleteGenre(id int) (bool, error) {
+	if id <= 0 {
+		return false, fmt.Errorf("Invalid movie id.")
+	}
+
+	deleted, err := s.repo.DeleteGenreByID(id)
+	if err != nil {
+		return false, err
+	}
+	if !deleted {
+		return false, fmt.Errorf("Genre not found")
+	}
+	return true, nil
 }

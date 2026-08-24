@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	m "movies_api/models"
 	"net/http"
@@ -62,9 +64,19 @@ func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.DeleteActor(idInt)
+	ok, err := h.service.DeleteActor(idInt)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to delete an actor. %s", err), http.StatusNotFound)
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Actor not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "Failed to delete actor: %s", http.StatusInternalServerError)
+		return
+	}
+
+	if !ok {
+		http.Error(w, "Failed to delete actor: %s", http.StatusInternalServerError)
 		return
 	}
 
@@ -75,12 +87,17 @@ func (h *ActorHandler) GetActor(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get an actor. %s", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Wrong actor id format. %s", err), http.StatusBadRequest)
 		return
 	}
 
 	actor, err := h.service.GetActor(idInt)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Actor not found", http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, fmt.Sprintf("Failed to get an actor. %s", err), http.StatusBadRequest)
 		return
 	}
