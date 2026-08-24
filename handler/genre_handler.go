@@ -11,19 +11,31 @@ import (
 )
 
 func (h *GenreHandler) GetAllGenres(w http.ResponseWriter, r *http.Request) {
+	// query := r.URL.Query()
+
+	// if name := query.Get("name"); name != "" {
+	// 	genres, err := h.service.GetAllGenres(name)
+	// 	if err != nil {
+	// 		http.Error(w, "Failed to get movies", http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// }
+
+	// w.Header().Set("Content-Type", "application/json")
+
+	// err = json.NewEncoder(w).Encode(genres)
+	// if err != nil {
+	// 	return
+	// }
 
 	genres, err := h.service.GetAllGenres()
 	if err != nil {
-		http.Error(w, "failed to get movies", http.StatusInternalServerError)
+		http.Error(w, "Failed to get genres", http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(genres)
-	if err != nil {
-		return
-	}
+	json.NewEncoder(w).Encode(genres)
 }
 
 func (h *GenreHandler) GetGenre(w http.ResponseWriter, r *http.Request) {

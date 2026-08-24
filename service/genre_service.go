@@ -6,15 +6,38 @@ import (
 	"fmt"
 	m "movies_api/models"
 	r "movies_api/repository"
+	"sort"
 )
 
 type GenreService struct {
 	repo r.GenreRepository
 }
 
-func (s *GenreService) GetAllGenres() ([]m.Genre, error) {
-	s.repo.FindAllGenres()
-	return []m.Genre{}, nil
+func (s *GenreService) GetAllGenres() ([]m.GenreDto, error) {
+	genres, err := s.repo.FindAllGenres()
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(genres, func(i, j int) bool {
+		return genres[i].Id < genres[j].Id
+	})
+
+	result := make([]m.GenreDto, 0, len(genres))
+	for _, genre := range genres {
+		genreDTO := m.GenreDto{
+			Id:     genre.Id,
+			Name:   genre.Name,
+			Movies: []m.MovieSummaryDto{},
+		}
+		for _, movie := range genreDTO.Movies {
+			genreDTO.Movies = append(genreDTO.Movies, m.MovieSummaryDto{
+				Id:   movie.Id,
+				Name: movie.Name,
+			})
+		}
+		result = append(result, genreDTO)
+	}
+	return result, nil
 }
 
 func (s *GenreService) GetGenre(id int) (m.GenreDto, error) {
