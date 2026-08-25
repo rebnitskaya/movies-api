@@ -216,3 +216,16 @@ func (r genreRepository) FindGenreByName(name string) (m.Genre, error) {
 
 	return genre, nil
 }
+
+func (r genreRepository) RemoveGenreRelationships(id int) error {
+	query := `
+		DELETEFROM genres_movies
+		WHERE genre_id = ?
+	`
+
+	_, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

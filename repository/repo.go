@@ -46,6 +46,7 @@ type GenreRepository interface {
 	ReplaceFieldsInGenre(int, string) (m.Genre, error)
 	DeleteGenreByID(int) (bool, error)
 	FindGenreByName(string) (m.Genre, error)
+	RemoveGenreRelationships(int) error
 }
 
 type MovieRepository interface {

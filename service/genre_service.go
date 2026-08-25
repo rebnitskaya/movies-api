@@ -87,9 +87,28 @@ func (s *GenreService) PatchGenre(id int, name string) (m.Genre, error) {
 	return genre, nil
 }
 
-func (s *GenreService) DeleteGenre(id int) (bool, error) {
+func (s *GenreService) DeleteGenre(id int, force bool) (bool, error) {
 	if id <= 0 {
 		return false, fmt.Errorf("Invalid genre id.")
+	}
+
+	genre, err := s.repo.FindGenreByID(id)
+	if err != nil {
+		return false, err
+	}
+
+	if !force && len(genre.Movies) > 0 {
+		return false, fmt.Errorf("Cannot delete genre '%s' because it has %d associated movies",
+			genre.Name,
+			len(genre.Movies),
+		)
+	}
+
+	if force {
+		err := s.repo.RemoveGenreRelationships(id)
+		if err != nil {
+			return false, err
+		}
 	}
 
 	deleted, err := s.repo.DeleteGenreByID(id)
@@ -99,5 +118,6 @@ func (s *GenreService) DeleteGenre(id int) (bool, error) {
 	if !deleted {
 		return false, fmt.Errorf("Genre not found")
 	}
+
 	return true, nil
 }

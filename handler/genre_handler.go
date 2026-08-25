@@ -104,7 +104,9 @@ func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := h.service.DeleteGenre(idInt)
+	force := r.URL.Query().Get("force") == "true"
+
+	deleted, err := h.service.DeleteGenre(idInt, force)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "Genre not found", http.StatusNotFound)
@@ -114,11 +116,12 @@ func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 		http.Error(
 			w,
 			fmt.Sprintf("Failed to delete genre: %s", err),
-			http.StatusInternalServerError,
+			http.StatusBadRequest,
 		)
+		return
 	}
 
-	if !ok {
+	if !deleted {
 		http.Error(w, "Failed to delete genre", http.StatusInternalServerError)
 		return
 	}
