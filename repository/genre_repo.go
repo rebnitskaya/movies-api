@@ -250,10 +250,56 @@ func (r movieRepository) RemoveGenreFromMovie(movieID, genreID int) error {
 		WHERE movie_id = ? AND genre_id = ?
 	`
 
-	_, err := r.db.Exec(query, movieID, genreID)
+	result, err := r.db.Exec(query, movieID, genreID)
 	if err != nil {
 		return fmt.Errorf("Failed to remove genre from movie: %w", err)
 	}
 
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
 	return nil
+}
+
+func (r movieRepository) FindGenresInMovie(MovieID int) ([]m.Genre, error) {
+	query := `
+		SELECT g.id, g.name
+	 	FROM genres g
+		JOIN genres_movies gm ON g.id = gm.genre_id
+		WHERE gm.movie_id = ?
+	`
+
+	rows, err := r.db.Query(query, MovieID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	genres := []m.Genre{}
+
+	for rows.Next() {
+		var genre m.Genre
+
+		err := rows.Scan(
+			&genre.Id,
+			&genre.Name,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		genres = append(genres, genre)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return genres, nil
 }

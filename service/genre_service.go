@@ -41,6 +41,10 @@ func (s *GenreService) GetAllGenres() ([]m.GenreDto, error) {
 }
 
 func (s *GenreService) GetGenre(id int) (m.GenreDto, error) {
+	if id <= 0 {
+		return m.GenreDto{}, fmt.Errorf("Invalid genre id")
+	}
+
 	genre, err := s.repo.FindGenreByID(id)
 	if err != nil {
 		return m.GenreDto{}, err
@@ -62,6 +66,14 @@ func (s *GenreService) GetGenre(id int) (m.GenreDto, error) {
 
 func (s *GenreService) CreateGenre(name string) (m.Genre, error) {
 
+	if name == "" {
+		return m.Genre{}, fmt.Errorf("Genre name cannot be empty")
+	}
+
+	if name == "" {
+		return m.Genre{}, fmt.Errorf("Genre name cannot be empty")
+	}
+
 	_, err := s.repo.FindGenreByName(name)
 	if err == nil {
 		return m.Genre{}, fmt.Errorf("Genre already exists")
@@ -80,6 +92,15 @@ func (s *GenreService) CreateGenre(name string) (m.Genre, error) {
 }
 
 func (s *GenreService) PatchGenre(id int, name string) (m.Genre, error) {
+
+	if name == "" {
+		return m.Genre{}, fmt.Errorf("Genre name cannot be empty")
+	}
+
+	if id <= 0 {
+		return m.Genre{}, fmt.Errorf("Invalid genre id")
+	}
+
 	genre, err := s.repo.ReplaceFieldsInGenre(id, name)
 	if err != nil {
 		return m.Genre{}, err
@@ -141,6 +162,13 @@ func (s *MovieService) AddGenreToMovie(movieID, genreID int) (m.MovieDto, error)
 		return m.MovieDto{}, err
 	}
 
+	genres, err := s.repo.FindGenresInMovie(movieID)
+	if err != nil {
+		return m.MovieDto{}, err
+	}
+
+	movie.Genres = genres
+
 	return movie, nil
 }
 
@@ -162,6 +190,13 @@ func (s *MovieService) DeleteGenreFromMovie(movieID, genreID int) (m.MovieDto, e
 	if err != nil {
 		return m.MovieDto{}, err
 	}
+
+	genres, err := s.repo.FindGenresInMovie(movieID)
+	if err != nil {
+		return m.MovieDto{}, err
+	}
+
+	movie.Genres = genres
 
 	return movie, nil
 }

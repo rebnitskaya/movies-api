@@ -121,6 +121,7 @@ func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
 	if err != nil {
 		return m.MovieDto{}, fmt.Errorf("Failed to find movie: %w", err)
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		found = true

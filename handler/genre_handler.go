@@ -170,6 +170,11 @@ func (h *MovieHandler) DeleteGenreFromMovie(w http.ResponseWriter, r *http.Reque
 
 	movie, err := h.service.DeleteGenreFromMovie(movieID, genreID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Movie or genre relationship not found", http.StatusNotFound)
+			return
+		}
+
 		http.Error(
 			w,
 			fmt.Sprintf("Failed to delete genre from movie: %s", err),
