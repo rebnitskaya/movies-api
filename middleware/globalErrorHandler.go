@@ -17,11 +17,11 @@ func GlobalErrorHandler(h models.AppHandler) http.HandlerFunc {
 
 func handleError(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, models.ErrActorsNotFound):
+	case errors.Is(err, models.ErrActorNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, models.ErrMoviesNotFound):
+	case errors.Is(err, models.ErrMovieNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, models.ErrGenresNotFound):
+	case errors.Is(err, models.ErrGenreNotFound):
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, models.ErrInvalidInput):
 		http.Error(w, err.Error(), http.StatusBadRequest)

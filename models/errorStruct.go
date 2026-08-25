@@ -9,10 +9,11 @@ type AppError struct {
 }
 
 var (
-	ErrMoviesNotFound         = errors.New("Movie not found error: ")
-	ErrActorsNotFound         = errors.New("Actors not found error: ")
-	ErrGenresNotFound         = errors.New("Genres not found error: ")
-	ErrInvalidInput           = errors.New("Invalid input error: ")
-	ErrBadRequest             = errors.New("Failed to process request: ")
-	ErrMovieHasBeenMadeBefore = errors.New("This movie already has been made before: ")
+	ErrMovieNotFound          = errors.New("movie not found")
+	ErrActorNotFound          = errors.New("actors not found")
+	ErrGenreNotFound          = errors.New("genres not found")
+	ErrInvalidInput           = errors.New("invalid input")
+	ErrBadRequest             = errors.New("failed to process request")
+	ErrMovieHasBeenMadeBefore = errors.New("this movie already has been made before")
+	ErrInternalIssue          = errors.New("error during program execution")
 )

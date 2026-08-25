@@ -19,12 +19,12 @@ func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandl
 	//movies
 	mux.HandleFunc("POST /api/movies", m.GlobalErrorHandler(movieHandler.PostMovie))
 	mux.HandleFunc("GET /api/movies/", m.GlobalErrorHandler(movieHandler.GetMovies))
-	mux.HandleFunc("GET /api/movies/{id}", movieHandler.GetMovie)
-	mux.HandleFunc("PATCH /api/movies/{id}", movieHandler.PatchMovie)
-	mux.HandleFunc("DELETE /api/movies/{id}", movieHandler.DeleteMovie)
-	mux.HandleFunc("GET /api/movies/{id}/actors", movieHandler.GetActorsInMovie)
-	mux.HandleFunc("POST /api/movies/{movieID}/actors/{actorID}", movieHandler.PostActorToMovie)
-	mux.HandleFunc("DELETE /api/movies/{movieID}/actors/{actorID}", movieHandler.DeleteActorFromMovie)
+	mux.HandleFunc("GET /api/movies/{id}", m.GlobalErrorHandler(movieHandler.GetMovie))
+	mux.HandleFunc("PATCH /api/movies/{id}", m.GlobalErrorHandler(movieHandler.PatchMovie))
+	mux.HandleFunc("DELETE /api/movies/{id}", m.GlobalErrorHandler(movieHandler.DeleteMovie))
+	mux.HandleFunc("GET /api/movies/{id}/actors", m.GlobalErrorHandler(movieHandler.GetActorsInMovie))
+	mux.HandleFunc("POST /api/movies/{movieID}/actors/{actorID}", m.GlobalErrorHandler(movieHandler.PostActorToMovie))
+	mux.HandleFunc("DELETE /api/movies/{movieID}/actors/{actorID}", m.GlobalErrorHandler(movieHandler.DeleteActorFromMovie))
 
 	//genres
 	mux.HandleFunc("POST /api/genres", genreHandler.PostGenre)
