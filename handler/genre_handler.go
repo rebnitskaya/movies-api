@@ -11,22 +11,6 @@ import (
 )
 
 func (h *GenreHandler) GetAllGenres(w http.ResponseWriter, r *http.Request) {
-	// query := r.URL.Query()
-
-	// if name := query.Get("name"); name != "" {
-	// 	genres, err := h.service.GetAllGenres(name)
-	// 	if err != nil {
-	// 		http.Error(w, "Failed to get movies", http.StatusInternalServerError)
-	// 		return
-	// 	}
-	// }
-
-	// w.Header().Set("Content-Type", "application/json")
-
-	// err = json.NewEncoder(w).Encode(genres)
-	// if err != nil {
-	// 	return
-	// }
 
 	genres, err := h.service.GetAllGenres()
 	if err != nil {
@@ -53,7 +37,7 @@ func (h *GenreHandler) GetGenre(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Error(w, fmt.Sprintf("Failed to get a genre. %s", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("Failed to get a genre. %s", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -82,10 +66,34 @@ func (h *GenreHandler) PostGenre(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *GenreHandler) PatchGenre(w http.ResponseWriter, r *http.Request) {
-	id := 0
-	name := ""
-	h.service.PatchGenre(id, name)
-	w.WriteHeader(http.StatusNoContent)
+	id := r.PathValue("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Wrong genre id format. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	var genreData m.GenreDto
+
+	err = json.NewDecoder(r.Body).Decode(&genreData)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	genre, err := h.service.PatchGenre(idInt, genreData.Name)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "Genre not found", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, fmt.Sprintf("Failed to update a genre. %s", err), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(genre)
+
 }
 
 func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
@@ -103,12 +111,15 @@ func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Error(w, "Failed to delete genre: %s", http.StatusInternalServerError)
-		return
+		http.Error(
+			w,
+			fmt.Sprintf("Failed to delete genre: %s", err),
+			http.StatusInternalServerError,
+		)
 	}
 
 	if !ok {
-		http.Error(w, "Failed to genre movie: %s", http.StatusInternalServerError)
+		http.Error(w, "Failed to delete genre", http.StatusInternalServerError)
 		return
 	}
 

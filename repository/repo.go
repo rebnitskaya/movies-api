@@ -43,7 +43,7 @@ type GenreRepository interface {
 	FindAllGenres() ([]m.Genre, error)
 	CreateGenre(m.Genre) (m.Genre, error)
 	FindGenreByID(int) (m.Genre, error)
-	ReplaceFieldsInGenre(int, string) (m.Genre, bool)
+	ReplaceFieldsInGenre(int, string) (m.Genre, error)
 	DeleteGenreByID(int) (bool, error)
 	FindGenreByName(string) (m.Genre, error)
 }

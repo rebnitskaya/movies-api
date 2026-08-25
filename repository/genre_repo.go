@@ -157,8 +157,24 @@ func (r genreRepository) FindGenreByID(id int) (m.Genre, error) {
 
 }
 
-func (r genreRepository) ReplaceFieldsInGenre(id int, name string) (m.Genre, bool) {
-	return m.Genre{}, false
+func (r genreRepository) ReplaceFieldsInGenre(id int, name string) (m.Genre, error) {
+	query := `
+			UPDATE genres
+			SET name = ?
+			WHERE id = ?
+			RETURNING id, name
+		`
+	var genre m.Genre
+
+	err := r.db.QueryRow(query, name, id).Scan(
+		&genre.Id,
+		&genre.Name,
+	)
+	if err != nil {
+		return m.Genre{}, err
+	}
+
+	return genre, nil
 }
 
 func (r genreRepository) DeleteGenreByID(id int) (bool, error) {

@@ -29,10 +29,10 @@ func (s *GenreService) GetAllGenres() ([]m.GenreDto, error) {
 			Name:   genre.Name,
 			Movies: []m.MovieSummaryDto{},
 		}
-		for _, movie := range genreDTO.Movies {
+		for _, movie := range genre.Movies {
 			genreDTO.Movies = append(genreDTO.Movies, m.MovieSummaryDto{
 				Id:   movie.Id,
-				Name: movie.Name,
+				Name: movie.Title,
 			})
 		}
 		result = append(result, genreDTO)
@@ -80,13 +80,16 @@ func (s *GenreService) CreateGenre(name string) (m.Genre, error) {
 }
 
 func (s *GenreService) PatchGenre(id int, name string) (m.Genre, error) {
-	s.repo.ReplaceFieldsInGenre(id, name)
-	return m.Genre{}, nil
+	genre, err := s.repo.ReplaceFieldsInGenre(id, name)
+	if err != nil {
+		return m.Genre{}, err
+	}
+	return genre, nil
 }
 
 func (s *GenreService) DeleteGenre(id int) (bool, error) {
 	if id <= 0 {
-		return false, fmt.Errorf("Invalid movie id.")
+		return false, fmt.Errorf("Invalid genre id.")
 	}
 
 	deleted, err := s.repo.DeleteGenreByID(id)
