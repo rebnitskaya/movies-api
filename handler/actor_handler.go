@@ -64,18 +64,24 @@ func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok, err := h.service.DeleteActor(idInt)
+	force := r.URL.Query().Get("force") == "true"
+
+	deleted, err := h.service.DeleteActor(idInt, force)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "Actor not found", http.StatusNotFound)
 			return
 		}
 
-		http.Error(w, "Failed to delete actor: %s", http.StatusInternalServerError)
+		http.Error(
+			w,
+			fmt.Sprintf("Failed to delete actor: %s", err),
+			http.StatusBadRequest,
+		)
 		return
 	}
 
-	if !ok {
+	if !deleted {
 		http.Error(w, "Failed to delete actor: %s", http.StatusInternalServerError)
 		return
 	}

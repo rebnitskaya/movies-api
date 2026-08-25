@@ -121,3 +121,47 @@ func (s *GenreService) DeleteGenre(id int, force bool) (bool, error) {
 
 	return true, nil
 }
+
+func (s *MovieService) AddGenreToMovie(movieID, genreID int) (m.MovieDto, error) {
+	if movieID <= 0 {
+		return m.MovieDto{}, fmt.Errorf("Invalid movie id.")
+	}
+
+	if genreID <= 0 {
+		return m.MovieDto{}, fmt.Errorf("Invalid genre id.")
+	}
+
+	err := s.repo.AddGenreToMovie(movieID, genreID)
+	if err != nil {
+		return m.MovieDto{}, err
+	}
+
+	movie, err := s.repo.FindMovieByID(movieID)
+	if err != nil {
+		return m.MovieDto{}, err
+	}
+
+	return movie, nil
+}
+
+func (s *MovieService) DeleteGenreFromMovie(movieID, genreID int) (m.MovieDto, error) {
+	if movieID <= 0 {
+		return m.MovieDto{}, fmt.Errorf("Invalid movie id.")
+	}
+
+	if genreID <= 0 {
+		return m.MovieDto{}, fmt.Errorf("Invalid genre id.")
+	}
+
+	err := s.repo.RemoveGenreFromMovie(movieID, genreID)
+	if err != nil {
+		return m.MovieDto{}, err
+	}
+
+	movie, err := s.repo.FindMovieByID(movieID)
+	if err != nil {
+		return m.MovieDto{}, err
+	}
+
+	return movie, nil
+}

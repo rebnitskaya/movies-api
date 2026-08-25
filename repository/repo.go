@@ -37,6 +37,7 @@ type ActorRepository interface {
 	FindActorByID(int) (m.Actor, error)
 	ReplaceFieldsInActor(int, map[string]string) (m.Actor, error)
 	FindActorsByName(string) ([]m.Actor, error)
+	RemoveActorRelationships(int) error
 }
 
 type GenreRepository interface {
@@ -62,4 +63,6 @@ type MovieRepository interface {
 	FindMovieByTitleAndYear(string, int) (m.Movie, error)
 	AddActorToMovie(int, int) error
 	RemoveActorFromMovie(int, int) error
+	AddGenreToMovie(int, int) error
+	RemoveGenreFromMovie(int, int) error
 }

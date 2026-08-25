@@ -293,3 +293,16 @@ func (r actorRepository) FindActorsByName(name string) ([]m.Actor, error) {
 
 	return actors, nil
 }
+
+func (r actorRepository) RemoveActorRelationships(id int) error {
+	query := `
+		DELETE FROM movie_actors
+		WHERE actor_id = ?
+	`
+
+	_, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -128,3 +128,57 @@ func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func (h *MovieHandler) PostGenreToMovie(w http.ResponseWriter, r *http.Request) {
+	movieID, err := strconv.Atoi(r.PathValue("movieID"))
+	if err != nil {
+		http.Error(w, "Wrong movie id format", http.StatusBadRequest)
+		return
+	}
+	genreID, err := strconv.Atoi(r.PathValue("genreID"))
+	if err != nil {
+		http.Error(w, "Wrong genre id format", http.StatusBadRequest)
+		return
+	}
+
+	movie, err := h.service.AddGenreToMovie(movieID, genreID)
+	if err != nil {
+		http.Error(
+			w,
+			fmt.Sprintf("Failed to add genre to movie: %s", err),
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(movie)
+}
+
+func (h *MovieHandler) DeleteGenreFromMovie(w http.ResponseWriter, r *http.Request) {
+	movieID, err := strconv.Atoi(r.PathValue("movieID"))
+	if err != nil {
+		http.Error(w, "Wrong movie id format", http.StatusBadRequest)
+		return
+	}
+	genreID, err := strconv.Atoi(r.PathValue("genreID"))
+	if err != nil {
+		http.Error(w, "Wrong genre id format", http.StatusBadRequest)
+		return
+	}
+
+	movie, err := h.service.DeleteGenreFromMovie(movieID, genreID)
+	if err != nil {
+		http.Error(
+			w,
+			fmt.Sprintf("Failed to delete genre from movie: %s", err),
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(movie)
+}

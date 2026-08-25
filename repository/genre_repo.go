@@ -219,7 +219,7 @@ func (r genreRepository) FindGenreByName(name string) (m.Genre, error) {
 
 func (r genreRepository) RemoveGenreRelationships(id int) error {
 	query := `
-		DELETEFROM genres_movies
+		DELETE FROM genres_movies
 		WHERE genre_id = ?
 	`
 
@@ -227,5 +227,33 @@ func (r genreRepository) RemoveGenreRelationships(id int) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (r movieRepository) AddGenreToMovie(movieID, genreID int) error {
+	query := `
+		INSERT INTO genres_movies (movie_id, genre_id)
+		VALUES (?, ?)
+	`
+
+	_, err := r.db.Exec(query, movieID, genreID)
+	if err != nil {
+		return fmt.Errorf("Failed to add genre to movie: %w", err)
+	}
+
+	return nil
+}
+
+func (r movieRepository) RemoveGenreFromMovie(movieID, genreID int) error {
+	query := `
+		DELETE FROM genres_movies
+		WHERE movie_id = ? AND genre_id = ?
+	`
+
+	_, err := r.db.Exec(query, movieID, genreID)
+	if err != nil {
+		return fmt.Errorf("Failed to remove genre from movie: %w", err)
+	}
+
 	return nil
 }
