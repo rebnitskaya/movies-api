@@ -32,6 +32,8 @@ func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandl
 	mux.HandleFunc("GET /api/genres/{id}", genreHandler.GetGenre)
 	mux.HandleFunc("PATCH /api/genres", genreHandler.PatchGenre)
 	mux.HandleFunc("DELETE /api/genres/{id}", genreHandler.DeleteGenre)
+	mux.HandleFunc("POST /api/movies/{movieID}/genres/{genreID}", movieHandler.PostGenreToMovie)
+	mux.HandleFunc("DELETE /api/movies/{movieID}/genres/{genreID}", movieHandler.DeleteGenreFromMovie)
 
 	// planning to use it for automatic documentation for endpoints
 	// mux.Handle(
