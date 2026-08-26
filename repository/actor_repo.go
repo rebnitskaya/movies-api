@@ -23,8 +23,6 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 
 	actorsMap := make(map[int]*m.Actor)
 
-	var actorIDs []int
-
 	for rows.Next() {
 		var actor m.Actor
 
@@ -50,7 +48,6 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 		if _, exists := actorsMap[actor.Id]; !exists {
 			actor.Movies = []m.Movie{}
 			actorsMap[actor.Id] = &actor
-			actorIDs = append(actorIDs, actor.Id)
 		}
 
 		if movieID.Valid {
@@ -69,27 +66,32 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 		return nil, fmt.Errorf("Something happened during query execution: %w", err)
 	}
 
-	actors := make([]m.Actor, 0, len(actorIDs))
+	actors := make([]m.Actor, 0, len(actorsMap))
 
-	for _, id := range actorIDs {
-		actors = append(actors, *actorsMap[id])
+	for _, id := range actorsMap {
+		actors = append(actors, *id)
 	}
 
 	return actors, nil
 }
 
-func (r actorRepository) CreateActor(actor m.Actor) (bool, error) {
+func (r actorRepository) CreateActor(actor m.Actor) (m.Actor, error) {
 	query := `
 		INSERT INTO actors (name, birth_date)
 		VALUES (?,?)
+		RETURNING id,  name, birth_date
 	`
 
-	_, err := r.db.Exec(query, actor.Name, actor.BirthDate)
+	err := r.db.QueryRow(query, actor.Name, actor.BirthDate).Scan(
+		&actor.Id,
+		&actor.Name,
+		&actor.BirthDate,
+	)
 	if err != nil {
-		return false, fmt.Errorf("Something happened during query execution: %w", err)
+		return m.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
 	}
 
-	return true, nil
+	return actor, nil
 }
 
 func (r actorRepository) FindActorByNameAndBirthDate(name string, birthDate string) (m.Actor, error) {
@@ -290,4 +292,17 @@ func (r actorRepository) FindActorsByName(name string) ([]m.Actor, error) {
 	}
 
 	return actors, nil
+}
+
+func (r actorRepository) RemoveActorRelationships(id int) error {
+	query := `
+		DELETE FROM movie_actors
+		WHERE actor_id = ?
+	`
+
+	_, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+	return nil
 }

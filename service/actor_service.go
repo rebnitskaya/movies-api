@@ -4,6 +4,7 @@ import (
 	"fmt"
 	m "movies_api/models"
 	r "movies_api/repository"
+	"sort"
 )
 
 type ActorService struct {
@@ -15,6 +16,11 @@ func (s *ActorService) GetAllActors() ([]m.ActorWithoutMoviesDto, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sort.Slice(actors, func(i, j int) bool {
+		return actors[i].Id < actors[j].Id
+	})
+
 	result := make([]m.ActorWithoutMoviesDto, 0, len(actors))
 	for _, actor := range actors {
 		actorDTO := m.ActorWithoutMoviesDto{
@@ -38,19 +44,19 @@ func (s *ActorService) GetAllActors() ([]m.ActorWithoutMoviesDto, error) {
 	return result, nil
 }
 
-func (s *ActorService) CreateActor(actorData m.ActorDto) (bool, error) {
+func (s *ActorService) CreateActor(actorData m.ActorDto) (m.Actor, error) {
 	_, err := actorData.Validate()
 	if err != nil {
-		return false, err
+		return m.Actor{}, err
 	}
 
 	actorExist, err := s.repo.FindActorByNameAndBirthDate(actorData.Name, actorData.BirthDate)
 	if err != nil {
-		return false, err
+		return m.Actor{}, err
 	}
 
 	if actorExist.BirthDate == actorData.BirthDate && actorExist.Name == actorData.Name {
-		return false, fmt.Errorf("This actor already has been made before.")
+		return m.Actor{}, fmt.Errorf("This actor already has been made before.")
 	}
 
 	actor := m.Actor{
@@ -59,23 +65,39 @@ func (s *ActorService) CreateActor(actorData m.ActorDto) (bool, error) {
 		Movies:    actorData.Movies,
 	}
 
-	ok, err := s.repo.CreateActor(actor)
+	createdActor, err := s.repo.CreateActor(actor)
+	if err != nil {
+		return m.Actor{}, err
+	}
+
+	return createdActor, nil
+}
+
+func (s *ActorService) DeleteActor(id int, force bool) (bool, error) {
+	if id <= 0 {
+		return false, fmt.Errorf("Invalid actor id.")
+	}
+
+	actor, err := s.repo.FindActorByID(id)
 	if err != nil {
 		return false, err
 	}
 
-	return ok, nil
-}
+	if !force && len(actor.Movies) > 0 {
+		return false, fmt.Errorf("Cannot delete actor '%s' because it has %d associated movies",
+			actor.Name,
+			len(actor.Movies),
+		)
+	}
 
-func (s *ActorService) DeleteActor(id int) error {
 	deleted, err := s.repo.DeleteActorByID(id)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if !deleted {
-		return fmt.Errorf("Actor not found")
+		return false, fmt.Errorf("Actor not found")
 	}
-	return nil
+	return true, nil
 }
 
 func (s *ActorService) GetActor(id int) (m.ActorWithoutMoviesDto, error) {
