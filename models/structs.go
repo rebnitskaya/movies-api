@@ -50,7 +50,7 @@ func ValidatePatchActor(fields map[string]string) error {
 
 			birthDate, err := time.Parse("2006-01-02", value)
 			if err != nil {
-				return fmt.Errorf("%w: actors birth date must be in YYYY-MM-DD format: %w", ErrBadRequest, err)
+				return fmt.Errorf("%w: actors birth date must be in YYYY-MM-DD format", ErrBadRequest)
 			}
 
 			if birthDate.Before(minDate) {
