@@ -288,7 +288,7 @@ func (r movieRepository) RemoveGenreFromMovie(movieID, genreID int) error {
 	return nil
 }
 
-func (r movieRepository) FindGenresInMovie(MovieID int) ([]m.Genre, error) {
+func (r movieRepository) FindGenresInMovie(MovieID int) ([]m.GenreWithoutMovies, error) {
 	query := `
 		SELECT g.id, g.name
 	 	FROM genres g
@@ -302,12 +302,12 @@ func (r movieRepository) FindGenresInMovie(MovieID int) ([]m.Genre, error) {
 	}
 	defer rows.Close()
 
-	genres := []m.Genre{}
+	genres := []m.GenreWithoutMovies{}
 
 	found := false
 	for rows.Next() {
 		found = true
-		var genre m.Genre
+		var genre m.GenreWithoutMovies
 
 		err := rows.Scan(
 			&genre.Id,

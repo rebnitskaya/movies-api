@@ -65,5 +65,5 @@ type MovieRepository interface {
 	RemoveActorFromMovie(int, int) error
 	AddGenreToMovie(int, int) error
 	RemoveGenreFromMovie(int, int) error
-	FindGenresInMovie(int) ([]m.Genre, error)
+	FindGenresInMovie(int) ([]m.GenreWithoutMovies, error)
 }

@@ -10,6 +10,11 @@ type GenreDto struct {
 	Movies []MovieSummaryDto `json:"movies"`
 }
 
+type GenreWithoutMovies struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+}
+
 type MovieSummaryDto struct {
 	Id   int    `json:"movieId"`
 	Name string `json:"movieName"`
