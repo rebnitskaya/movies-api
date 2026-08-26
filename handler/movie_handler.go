@@ -85,7 +85,7 @@ func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) error {
 
 	err := json.NewDecoder(r.Body).Decode(&movieDto)
 	if err != nil {
-		return fmt.Errorf("Something wrong with incoming data: %s, %w", err, m.ErrInvalidInput)
+		return fmt.Errorf("%w: something is wrong with incoming data: %s", m.ErrInvalidInput, err)
 	}
 
 	m, err := h.service.MovieMaker(movieDto)
@@ -107,7 +107,7 @@ func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) error 
 
 	err = json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
-		return fmt.Errorf("Something wrong with incoming data: %s, %w", err, m.ErrInvalidInput)
+		return fmt.Errorf("%w: something wrong with incoming data: %s", m.ErrInvalidInput, err)
 	}
 
 	movie, err := h.service.MoviePatcher(data, movieId)

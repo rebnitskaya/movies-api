@@ -56,7 +56,7 @@ func (s *ActorService) CreateActor(actorData m.ActorDto) (m.Actor, error) {
 	}
 
 	if actorExist.BirthDate == actorData.BirthDate && actorExist.Name == actorData.Name {
-		return m.Actor{}, fmt.Errorf("This actor already has been made before.")
+		return m.Actor{}, fmt.Errorf("%w this actor already has been made before.", m.ErrBadRequest)
 	}
 
 	actor := m.Actor{
@@ -75,7 +75,7 @@ func (s *ActorService) CreateActor(actorData m.ActorDto) (m.Actor, error) {
 
 func (s *ActorService) DeleteActor(id int, force bool) (bool, error) {
 	if id <= 0 {
-		return false, fmt.Errorf("Invalid actor id.")
+		return false, fmt.Errorf("%w invalid actor id.", m.ErrBadRequest)
 	}
 
 	actor, err := s.repo.FindActorByID(id)
@@ -84,19 +84,18 @@ func (s *ActorService) DeleteActor(id int, force bool) (bool, error) {
 	}
 
 	if !force && len(actor.Movies) > 0 {
-		return false, fmt.Errorf("Cannot delete actor '%s' because it has %d associated movies",
+		return false, fmt.Errorf("%w cannot delete actor '%s' because it has %d associated movies",
+			m.ErrBadRequest,
 			actor.Name,
 			len(actor.Movies),
 		)
 	}
 
-	deleted, err := s.repo.DeleteActorByID(id)
+	_, err = s.repo.DeleteActorByID(id)
 	if err != nil {
 		return false, err
 	}
-	if !deleted {
-		return false, fmt.Errorf("Actor not found")
-	}
+
 	return true, nil
 }
 
