@@ -36,6 +36,7 @@ func (h *ActorHandler) PostActor(w http.ResponseWriter, r *http.Request) error {
 	var actorData m.ActorDto
 
 	err := json.NewDecoder(r.Body).Decode(&actorData)
+
 	if err != nil {
 		return fmt.Errorf("%w: something is wrong with incoming data: %s", m.ErrInvalidInput, err)
 	}
@@ -49,6 +50,7 @@ func (h *ActorHandler) PostActor(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusCreated)
 
 	return json.NewEncoder(w).Encode(createdActor)
+
 }
 
 func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) error {
