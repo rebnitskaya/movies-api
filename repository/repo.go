@@ -30,7 +30,7 @@ func NewMovieRepository(db *sql.DB) MovieRepository {
 }
 
 type ActorRepository interface {
-	FindAllActors() ([]m.Actor, error)
+	FindAllActors(int, int) ([]m.Actor, error)
 	CreateActor(m.Actor) (m.Actor, error)
 	FindActorByNameAndBirthDate(string, string) (m.Actor, error)
 	DeleteActorByID(int) (bool, error)

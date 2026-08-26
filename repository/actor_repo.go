@@ -6,16 +6,28 @@ import (
 	m "movies_api/models"
 )
 
-func (r actorRepository) FindAllActors() ([]m.Actor, error) {
+func (r actorRepository) FindAllActors(limit, offset int) ([]m.Actor, error) {
 	query := `
-	SELECT a.id, a.name, a.birth_date, m.id, m.title, m.release_year, m.duration
-		FROM actors a
-		LEFT JOIN movie_actors ma ON a.id = ma.actor_id
-		LEFT JOIN movies m ON ma.movie_id = m.id
-		ORDER by a.id
+	SELECT
+    	a.id,
+     	a.name,
+      	a.birth_date,
+       	m.id,
+    	m.title,
+        m.release_year,
+        m.duration
+	FROM (
+    	SELECT id, name, birth_date
+     	FROM actors
+     	ORDER BY id
+      	LIMIT ? OFFSET ?
+    ) a
+	LEFT JOIN movie_actors am ON a.id = am.actor_id
+	LEFT JOIN movies m ON am.movie_id = m.id
+	ORDER BY a.id
 	`
 
-	rows, err := r.db.Query(query)
+	rows, err := r.db.Query(query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}

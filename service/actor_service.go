@@ -12,8 +12,11 @@ type ActorService struct {
 	repo r.ActorRepository
 }
 
-func (s *ActorService) GetAllActors() ([]m.ActorWithoutMoviesDto, error) {
-	actors, err := s.repo.FindAllActors()
+func (s *ActorService) GetAllActors(page, limit int) ([]m.ActorWithoutMoviesDto, error) {
+
+	offset := (page - 1) * limit
+
+	actors, err := s.repo.FindAllActors(limit, offset)
 	if err != nil {
 		return nil, err
 	}

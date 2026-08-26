@@ -3,12 +3,19 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"movies_api/middleware"
 	m "movies_api/models"
 	"net/http"
 	"strconv"
 )
 
 func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) error {
+
+	page, limit, err := middleware.GetPaginationParams(r)
+	if err != nil {
+		return fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
+	}
+
 	query := r.URL.Query()
 
 	// Retrieve actors filtered by name
@@ -22,7 +29,7 @@ func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) erro
 		return json.NewEncoder(w).Encode(actors)
 	}
 
-	actors, err := h.service.GetAllActors()
+	actors, err := h.service.GetAllActors(page, limit)
 	if err != nil {
 		return err
 	}
