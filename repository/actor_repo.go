@@ -17,7 +17,7 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 
 	rows, err := r.db.Query(query)
 	if err != nil {
-		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 	defer rows.Close()
 
@@ -42,7 +42,7 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 		)
 
 		if err != nil {
-			return nil, fmt.Errorf("Something happened during query execution: %w", err)
+			return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
 		if _, exists := actorsMap[actor.Id]; !exists {
@@ -63,7 +63,7 @@ func (r actorRepository) FindAllActors() ([]m.Actor, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	actors := make([]m.Actor, 0, len(actorsMap))
@@ -88,7 +88,7 @@ func (r actorRepository) CreateActor(actor m.Actor) (m.Actor, error) {
 		&actor.BirthDate,
 	)
 	if err != nil {
-		return m.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+		return m.Actor{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	return actor, nil
@@ -103,14 +103,17 @@ func (r actorRepository) FindActorByNameAndBirthDate(name string, birthDate stri
 
 	rows, err := r.db.Query(query, name, birthDate)
 	if err != nil {
-		return m.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+		return m.Actor{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	defer rows.Close()
 
 	var actor m.Actor
+	found := false
 
 	for rows.Next() {
+		found = true
+
 		err := rows.Scan(
 			&actor.Id,
 			&actor.Name,
@@ -118,13 +121,17 @@ func (r actorRepository) FindActorByNameAndBirthDate(name string, birthDate stri
 		)
 
 		if err != nil {
-			return m.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+			return m.Actor{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 	}
 
 	err = rows.Err()
 	if err != nil {
-		return m.Actor{}, fmt.Errorf("Something happened during query execution: %w", err)
+		return m.Actor{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+	}
+
+	if !found {
+		return m.Actor{}, m.ErrActorNotFound
 	}
 
 	return actor, nil
@@ -137,15 +144,16 @@ func (r actorRepository) DeleteActorByID(id int) (bool, error) {
 	`
 	result, err := r.db.Exec(query, id)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
+
 	if rowsAffected == 0 {
-		return false, sql.ErrNoRows
+		return false, m.ErrActorNotFound
 	}
 
 	return true, nil
@@ -162,7 +170,7 @@ func (r actorRepository) FindActorByID(id int) (m.Actor, error) {
 
 	rows, err := r.db.Query(query, id)
 	if err != nil {
-		return m.Actor{}, err
+		return m.Actor{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 	defer rows.Close()
 
@@ -170,6 +178,7 @@ func (r actorRepository) FindActorByID(id int) (m.Actor, error) {
 	found := false
 
 	for rows.Next() {
+		found = true
 		var movieID sql.NullInt64
 		var movieTitle sql.NullString
 		var releaseYear sql.NullInt64
@@ -185,11 +194,7 @@ func (r actorRepository) FindActorByID(id int) (m.Actor, error) {
 			&duration,
 		)
 		if err != nil {
-			return m.Actor{}, err
-		}
-		if !found {
-			actor.Movies = []m.Movie{}
-			found = true
+			return m.Actor{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
 		if movieID.Valid {
@@ -203,11 +208,11 @@ func (r actorRepository) FindActorByID(id int) (m.Actor, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		return m.Actor{}, err
+		return m.Actor{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	if !found {
-		return m.Actor{}, sql.ErrNoRows
+		return m.Actor{}, m.ErrActorNotFound
 	}
 
 	return actor, nil
@@ -251,7 +256,7 @@ func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string) 
 		&actor.BirthDate,
 	)
 	if err != nil {
-		return m.Actor{}, err
+		return m.Actor{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	return actor, nil
@@ -266,13 +271,15 @@ func (r actorRepository) FindActorsByName(name string) ([]m.Actor, error) {
 
 	rows, err := r.db.Query(query, name)
 	if err != nil {
-		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 	defer rows.Close()
 
 	var actors []m.Actor
 
+	found := false
 	for rows.Next() {
+		found = true
 		var actor m.Actor
 
 		err := rows.Scan(
@@ -282,13 +289,18 @@ func (r actorRepository) FindActorsByName(name string) ([]m.Actor, error) {
 		)
 
 		if err != nil {
-			return nil, fmt.Errorf("Something happened during query execution: %w", err)
+			return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
 		actors = append(actors, actor)
 	}
+
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("Something happened during query execution: %w", err)
+	}
+
+	if !found {
+		return []m.Actor{}, m.ErrActorNotFound
 	}
 
 	return actors, nil
@@ -300,9 +312,19 @@ func (r actorRepository) RemoveActorRelationships(id int) error {
 		WHERE actor_id = ?
 	`
 
-	_, err := r.db.Exec(query, id)
+	res, err := r.db.Exec(query, id)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%w Something happened during actor deletion: %w", m.ErrInternalIssue, err)
+	}
+
+	if rowsAffected == 0 {
+		return m.ErrActorNotFound
+	}
+
 	return nil
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"movies_api/models"
 	m "movies_api/models"
@@ -18,7 +19,7 @@ func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
 
 	rows, err := r.db.Query(query)
 	if err != nil {
-		return []models.MovieDto{}, err
+		return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	moviesMap := make(map[int]*models.MovieDto)
@@ -44,7 +45,7 @@ func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
 		)
 
 		if err != nil {
-			return []models.MovieDto{}, fmt.Errorf("Something happened during query execution: %w", err)
+			return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
 		movie, exists := moviesMap[movieID]
@@ -70,7 +71,7 @@ func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("Error while iterating movies: %w", err)
+		return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	movies := make([]m.MovieDto, 0, len(moviesMap))
@@ -99,7 +100,7 @@ func (r movieRepository) CreateMovie(movieData models.MovieDto) (models.Movie, e
 	)
 
 	if err != nil {
-		return models.Movie{}, fmt.Errorf("Failed to create movie: %w", err)
+		return models.Movie{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	return movie, nil
@@ -119,7 +120,7 @@ func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
 
 	rows, err := r.db.Query(query, movieID)
 	if err != nil {
-		return m.MovieDto{}, fmt.Errorf("Failed to find movie: %w", err)
+		return m.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 	defer rows.Close()
 
@@ -141,7 +142,7 @@ func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
 			&actorBirthDate,
 		)
 		if err != nil {
-			return m.MovieDto{}, fmt.Errorf("Something happened during query execution: %w", err)
+			return m.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
 		if actorID.Valid {
@@ -154,11 +155,11 @@ func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
 	}
 
 	if err := rows.Err(); err != nil {
-		return m.MovieDto{}, fmt.Errorf("Something happened during query execution: %w", err)
+		return m.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	if !found {
-		return m.MovieDto{}, sql.ErrNoRows
+		return m.MovieDto{}, m.ErrMovieNotFound
 	}
 
 	return movie, nil
@@ -176,7 +177,7 @@ func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[st
 
 	for field, value := range filedsToUpdate {
 		if !alowedToChange[field] {
-			return m.Movie{}, fmt.Errorf("Not allowed to change the field: %s", field)
+			return models.Movie{}, fmt.Errorf("%w: field %q cannot be changed", m.ErrBadRequest, field)
 		}
 
 		//since map can return stuf in random order
@@ -202,7 +203,11 @@ func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[st
 	)
 
 	if err != nil {
-		return m.Movie{}, fmt.Errorf("Failed to update movie: %w", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			return m.Movie{}, m.ErrMovieNotFound
+		}
+
+		return m.Movie{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	return movie, nil
@@ -216,16 +221,16 @@ func (r movieRepository) DeleteMovieByID(movieID int) (bool, error) {
 
 	res, err := r.db.Exec(query, movieID)
 	if err != nil {
-		return false, fmt.Errorf("Failed to delete movie: %w", err)
+		return false, fmt.Errorf("%w Something happened during movie deletion: %w", m.ErrInternalIssue, err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return false, fmt.Errorf("Failed to check deleted movie: %w", err)
+		return false, fmt.Errorf("%w Something happened during movie deletion: %w", m.ErrInternalIssue, err)
 	}
 
 	if rowsAffected == 0 {
-		return false, sql.ErrNoRows
+		return false, m.ErrMovieNotFound
 	}
 
 	return true, nil
@@ -242,14 +247,16 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 
 	rows, err := r.db.Query(query, genreID)
 	if err != nil {
-		return []models.MovieDto{}, err
+		return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	defer rows.Close()
 
 	moviesMap := make(map[int]*models.MovieDto)
+	found := false
 
 	for rows.Next() {
+		found = true
 		var movieID int
 		var title string
 		var releaseYear int
@@ -268,7 +275,7 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 		)
 
 		if err != nil {
-			return []models.MovieDto{}, fmt.Errorf("Something happened during query execution: %w", err)
+			return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
 		movie, exists := moviesMap[movieID]
@@ -293,7 +300,11 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("Error while iterating movies: %w", err)
+		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+	}
+
+	if !found {
+		return nil, m.ErrMovieNotFound
 	}
 
 	movies := make([]m.MovieDto, 0, len(moviesMap))
@@ -314,11 +325,13 @@ func (r movieRepository) FindMoviesByYear(year int) ([]models.Movie, error) {
 	movies := []m.Movie{}
 	rows, err := r.db.Query(query, year)
 	if err != nil {
-		return movies, err
+		return movies, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 	defer rows.Close()
 
+	found := false
 	for rows.Next() {
+		found = true
 		movie := models.Movie{}
 		err := rows.Scan(
 			&movie.Id,
@@ -328,14 +341,18 @@ func (r movieRepository) FindMoviesByYear(year int) ([]models.Movie, error) {
 		)
 
 		if err != nil {
-			return []models.Movie{}, fmt.Errorf("Something happened during query execution: %w", err)
+			return []models.Movie{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
 		movies = append(movies, movie)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("Error while iterating movies: %w", err)
+		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+	}
+
+	if !found {
+		return nil, m.ErrMovieNotFound
 	}
 
 	return movies, nil
@@ -352,14 +369,16 @@ func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, er
 
 	rows, err := r.db.Query(query, actorID)
 	if err != nil {
-		return []models.MovieDto{}, err
+		return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	defer rows.Close()
 
 	moviesMap := make(map[int]*models.MovieDto)
+	found := false
 
 	for rows.Next() {
+		found = true
 		var movieID int
 		var title string
 		var releaseYear int
@@ -380,7 +399,7 @@ func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, er
 		)
 
 		if err != nil {
-			return []models.MovieDto{}, fmt.Errorf("Something happened during query execution: %w", err)
+			return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
 		movie, exists := moviesMap[movieID]
@@ -406,7 +425,11 @@ func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, er
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("Error while iterating movies: %w", err)
+		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+	}
+
+	if !found {
+		return nil, m.ErrMovieNotFound
 	}
 
 	movies := make([]m.MovieDto, 0, len(moviesMap))
@@ -427,7 +450,7 @@ func (r movieRepository) FindAllActorsInMovie(movieID int) ([]models.ActorInFilm
 
 	rows, err := r.db.Query(query, movieID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 	defer rows.Close()
 
@@ -443,7 +466,7 @@ func (r movieRepository) FindAllActorsInMovie(movieID int) ([]models.ActorInFilm
 		)
 
 		if err != nil {
-			return nil, fmt.Errorf("Something happened during query execution: %w", err)
+			return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
 		actors = append(actors, actor)
@@ -454,7 +477,7 @@ func (r movieRepository) FindAllActorsInMovie(movieID int) ([]models.ActorInFilm
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("Error while iterating movies: %w", err)
+		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	return actors, nil
@@ -468,14 +491,15 @@ func (r movieRepository) FindMovieByTitleAndYear(title string, year int) (models
 	`
 	rows, err := r.db.Query(query, title, year)
 	if err != nil {
-		return m.Movie{}, fmt.Errorf("Something happened during query execution: %w", err)
+		return m.Movie{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	defer rows.Close()
 
 	var movie m.Movie
-
+	found := false
 	for rows.Next() {
+		found = true
 		err := rows.Scan(
 			&movie.Id,
 			&movie.Title,
@@ -484,13 +508,17 @@ func (r movieRepository) FindMovieByTitleAndYear(title string, year int) (models
 		)
 
 		if err != nil {
-			return m.Movie{}, fmt.Errorf("Something happened during query execution: %w", err)
+			return m.Movie{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 	}
 
 	err = rows.Err()
 	if err != nil {
-		return m.Movie{}, fmt.Errorf("Something happened during query execution: %w", err)
+		return m.Movie{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+	}
+
+	if !found {
+		return m.Movie{}, m.ErrMovieNotFound
 	}
 
 	return movie, nil
@@ -504,7 +532,7 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int) error {
 
 	_, err := r.db.Exec(query, movieID, actorID)
 	if err != nil {
-		return fmt.Errorf("Failed to add actor to movie: %w", err)
+		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	return nil
@@ -518,7 +546,7 @@ func (r movieRepository) RemoveActorFromMovie(movieID, actorID int) error {
 
 	_, err := r.db.Exec(query, movieID, actorID)
 	if err != nil {
-		return fmt.Errorf("Failed to remove actor from movie: %w", err)
+		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
 	return nil
