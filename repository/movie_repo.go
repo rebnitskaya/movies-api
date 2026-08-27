@@ -11,19 +11,16 @@ import (
 
 func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
 	query := `
-		SELECT m.id, m.title, m.release_year, m.duration, a.id, a.name, a.birth_date, g.id, g.name
+		SELECT m.id, m.title, m.release_year, m.duration, a.id, a.name, a.birth_date
 		FROM movies m
 		LEFT JOIN movie_actors ma ON ma.movie_id = m.id
 		LEFT JOIN actors a ON a.id = ma.actor_id
-		LEFT JOIN genres_movies gm ON gm.movie_id = m.id
-		LEFT JOIN genres g ON g.id = gm.genre_id
 	`
 
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
-	defer rows.Close()
 
 	moviesMap := make(map[int]*models.MovieDto)
 
@@ -37,9 +34,6 @@ func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
 		var actorName sql.NullString
 		var actorBirthDate sql.NullString
 
-		var genreID sql.NullInt64
-		var genreName sql.NullString
-
 		err := rows.Scan(
 			&movieID,
 			&title,
@@ -48,8 +42,6 @@ func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
 			&actorID,
 			&actorName,
 			&actorBirthDate,
-			&genreID,
-			&genreName,
 		)
 
 		if err != nil {
@@ -70,40 +62,11 @@ func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
 		}
 
 		if actorID.Valid {
-			actorExists := false
-
-			for _, actor := range movie.Actors {
-				if actor.Id == int(actorID.Int64) {
-					actorExists = true
-					break
-				}
-			}
-
-			if !actorExists {
-				movie.Actors = append(movie.Actors, m.ActorInFilmDto{
-					Id:        int(actorID.Int64),
-					Name:      actorName.String,
-					BirthDate: actorBirthDate.String,
-				})
-			}
-		}
-
-		if genreID.Valid {
-			genreExists := false
-
-			for _, genre := range movie.Genres {
-				if genre.Id == int(genreID.Int64) {
-					genreExists = true
-					break
-				}
-			}
-
-			if !genreExists {
-				movie.Genres = append(movie.Genres, m.GenreWithoutMovies{
-					Id:   int(genreID.Int64),
-					Name: genreName.String,
-				})
-			}
+			movie.Actors = append(movie.Actors, m.ActorInFilmDto{
+				Id:        int(actorID.Int64),
+				Name:      actorName.String,
+				BirthDate: actorBirthDate.String,
+			})
 		}
 	}
 
