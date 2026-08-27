@@ -227,26 +227,3 @@ func (r genreRepository) FindGenreByName(name string) (m.Genre, error) {
 
 	return genre, nil
 }
-
-// func (r genreRepository) RemoveGenreRelationships(id int) error {
-// 	query := `
-// 		DELETE FROM genres_movies
-// 		WHERE genre_id = ?
-// 	`
-
-// 	res, err := r.db.Exec(query, id)
-// 	if err != nil {
-// 		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
-// 	}
-
-// 	rowsAffected, err := res.RowsAffected()
-// 	if err != nil {
-// 		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
-// 	}
-
-// 	if rowsAffected == 0 {
-// 		return m.ErrGenreNotFound
-// 	}
-
-// 	return nil
-// }
