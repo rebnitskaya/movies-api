@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	m "movies_api/models"
 	r "movies_api/repository"
@@ -11,8 +12,11 @@ type ActorService struct {
 	repo r.ActorRepository
 }
 
-func (s *ActorService) GetAllActors() ([]m.ActorWithoutMoviesDto, error) {
-	actors, err := s.repo.FindAllActors()
+func (s *ActorService) GetAllActors(page, limit int) ([]m.ActorWithoutMoviesDto, error) {
+
+	offset := (page - 1) * limit
+
+	actors, err := s.repo.FindAllActors(limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -50,13 +54,20 @@ func (s *ActorService) CreateActor(actorData m.ActorDto) (m.Actor, error) {
 		return m.Actor{}, err
 	}
 
-	actorExist, err := s.repo.FindActorByNameAndBirthDate(actorData.Name, actorData.BirthDate)
-	if err != nil {
-		return m.Actor{}, err
+	_, err = s.repo.FindActorByNameAndBirthDate(
+		actorData.Name,
+		actorData.BirthDate,
+	)
+
+	if err == nil {
+		return m.Actor{}, fmt.Errorf(
+			"%w: this actor already has been made before",
+			m.ErrBadRequest,
+		)
 	}
 
-	if actorExist.BirthDate == actorData.BirthDate && actorExist.Name == actorData.Name {
-		return m.Actor{}, fmt.Errorf("%w this actor already has been made before.", m.ErrBadRequest)
+	if !errors.Is(err, m.ErrActorNotFound) {
+		return m.Actor{}, err
 	}
 
 	actor := m.Actor{
