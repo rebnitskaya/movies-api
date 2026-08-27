@@ -165,7 +165,14 @@ func (r movieRepository) findGenresForMovies() (map[int]*models.MovieDto, error)
 	return moviesMap, nil
 }
 
-func (r movieRepository) CreateMovie(movieData models.MovieDto) (models.Movie, error) {
+func (r movieRepository) CreateMovie(movieData models.CreateMovieDto) (models.Movie, error) {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return models.Movie{}, fmt.Errorf("%w: failed to start transaction: %w", m.ErrInternalIssue, err)
+	}
+	defer tx.Rollback()
+
+	//creating a movie
 	query := `
 		INSERT INTO movies (title, release_year, duration)
 		VALUES (?,?,?)
@@ -173,7 +180,7 @@ func (r movieRepository) CreateMovie(movieData models.MovieDto) (models.Movie, e
 	`
 
 	var movie models.Movie
-	err := r.db.QueryRow(
+	err = tx.QueryRow(
 		query, movieData.Title, movieData.ReleaseYear, movieData.Duration,
 	).Scan(
 		&movie.Id,
@@ -184,6 +191,48 @@ func (r movieRepository) CreateMovie(movieData models.MovieDto) (models.Movie, e
 
 	if err != nil {
 		return models.Movie{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+	}
+
+	//adding a connection to actors if able
+	actorQuery := `
+		INSERT INTO movie_actors (movie_id, actor_id)
+		VALUES (?, ?)
+	`
+
+	if movieData.Actors != nil {
+		for _, actorID := range movieData.Actors {
+			if err := r.actorExists(tx, actorID); err != nil {
+				return models.Movie{}, err
+			}
+
+			_, err = tx.Exec(actorQuery, movie.Id, actorID)
+			if err != nil {
+				return models.Movie{}, fmt.Errorf("%w: failed to add actor %d to movie: %w", m.ErrInternalIssue, actorID, err)
+			}
+		}
+	}
+
+	//adding a connection to actors if able
+	genreQuery := `
+		INSERT INTO genres_movies (movie_id, genre_id)
+		VALUES (?, ?)
+	`
+	if movieData.Genres != nil {
+		for _, genreID := range movieData.Genres {
+			if err := r.genreExists(tx, genreID); err != nil {
+				return models.Movie{}, err
+			}
+
+			_, err = tx.Exec(genreQuery, movie.Id, genreID)
+			if err != nil {
+				return models.Movie{}, fmt.Errorf("%w: failed to add genre %d to movie: %w", m.ErrInternalIssue, genreID, err)
+			}
+		}
+	}
+
+	//commiting
+	if err = tx.Commit(); err != nil {
+		return models.Movie{}, fmt.Errorf("%w: failed to execute movie creation: %w", m.ErrInternalIssue, err)
 	}
 
 	return movie, nil
@@ -787,6 +836,45 @@ func (r movieRepository) RemoveGenreFromMovie(movieID, genreID int) error {
 
 	if rowsAffected == 0 {
 		return fmt.Errorf("%w: movie with id %d has no genre with id %d.", m.ErrBadRequest, movieID, genreID)
+	}
+
+	return nil
+}
+
+func (r movieRepository) actorExists(tx *sql.Tx, actorID int) error {
+	var id int
+
+	err := tx.QueryRow(
+		`SELECT id FROM actors WHERE id = ?`,
+		actorID,
+	).Scan(&id)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		fmt.Println("errors.Is(err, sql.ErrNoRows")
+		return fmt.Errorf("%w: actor %d doesn't exist", m.ErrActorNotFound, actorID)
+	}
+
+	if err != nil {
+		return fmt.Errorf("%w: failed to check actor: %w", m.ErrInternalIssue, err)
+	}
+
+	return nil
+}
+
+func (r movieRepository) genreExists(tx *sql.Tx, genreID int) error {
+	var id int
+
+	err := tx.QueryRow(
+		`SELECT id FROM genres WHERE id = ?`,
+		genreID,
+	).Scan(&id)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("%w: genre %d doesn't exist", m.ErrGenreNotFound, genreID)
+	}
+
+	if err != nil {
+		return fmt.Errorf("%w: failed to check genre: %w", m.ErrInternalIssue, err)
 	}
 
 	return nil
