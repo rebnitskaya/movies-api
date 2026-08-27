@@ -64,6 +64,24 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 	return json.NewEncoder(w).Encode(movies)
 }
 
+func (h *MovieHandler) SearchByTitle(w http.ResponseWriter, r *http.Request) error {
+	query := r.URL.Query()
+
+	w.Header().Set("Content-Type", "application/json")
+
+	//not yet ready
+	if title := query.Get("title"); title != "" {
+		movies, err := h.service.GetAllMoviesWithTitle(title)
+		if err != nil {
+			return err
+		}
+
+		return json.NewEncoder(w).Encode(movies)
+	}
+
+	return fmt.Errorf("%w: invalid search", m.ErrBadRequest)
+}
+
 func (h *MovieHandler) GetMovie(w http.ResponseWriter, r *http.Request) error {
 	movieId, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
@@ -126,7 +144,9 @@ func (h *MovieHandler) DeleteMovie(w http.ResponseWriter, r *http.Request) error
 		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
 	}
 
-	ok, err := h.service.DeleteMovie(movieId)
+	force := r.URL.Query().Get("force") == "true"
+
+	ok, err := h.service.DeleteMovie(movieId, force)
 	if err != nil {
 		return err
 	}

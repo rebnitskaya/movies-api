@@ -86,7 +86,7 @@ func (s *ActorService) CreateActor(actorData m.ActorDto) (m.Actor, error) {
 
 func (s *ActorService) DeleteActor(id int, force bool) (bool, error) {
 	if id <= 0 {
-		return false, fmt.Errorf("%w invalid actor id.", m.ErrBadRequest)
+		return false, fmt.Errorf("%w: invalid actor id.", m.ErrBadRequest)
 	}
 
 	actor, err := s.repo.FindActorByID(id)
@@ -95,7 +95,7 @@ func (s *ActorService) DeleteActor(id int, force bool) (bool, error) {
 	}
 
 	if !force && len(actor.Movies) > 0 {
-		return false, fmt.Errorf("%w cannot delete actor '%s' because it has %d associated movies",
+		return false, fmt.Errorf("%w: cannot delete actor '%s' because it has %d associated movies",
 			m.ErrBadRequest,
 			actor.Name,
 			len(actor.Movies),
