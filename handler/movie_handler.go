@@ -144,7 +144,9 @@ func (h *MovieHandler) DeleteMovie(w http.ResponseWriter, r *http.Request) error
 		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
 	}
 
-	ok, err := h.service.DeleteMovie(movieId)
+	force := r.URL.Query().Get("force") == "true"
+
+	ok, err := h.service.DeleteMovie(movieId, force)
 	if err != nil {
 		return err
 	}

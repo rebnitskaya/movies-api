@@ -53,17 +53,17 @@ func CreateTables(db *sql.DB) error {
 			actor_id INTEGER NOT NULL,
 
 			PRIMARY KEY (movie_id,actor_id),
-			FOREIGN KEY (movie_id) REFERENCES movies(id),
-			FOREIGN KEY (actor_id) REFERENCES actors(id)
+			FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
+			FOREIGN KEY (actor_id) REFERENCES actors(id) ON DELETE CASCADE
 		);
 
 		CREATE TABLE IF NOT EXISTS genres_movies (
 			genre_id INTEGER NOT NULL,
 			movie_id INTEGER NOT NULL,
 
-			PRIMARY KEY (genre_id,movie_id)
-			FOREIGN KEY (genre_id) REFERENCES genres(id),
-			FOREIGN KEY (movie_id) REFERENCES movies(id)
+			PRIMARY KEY (genre_id,movie_id),
+			FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE CASCADE,
+			FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE
 		);
 	`)
 

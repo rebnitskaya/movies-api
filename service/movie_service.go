@@ -45,7 +45,7 @@ func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]m.MovieDto, error) 
 
 func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.Movie, error) {
 	if year < 1885 || year > 2050 || year == 0 {
-		return []m.Movie{}, fmt.Errorf("%w Invalid release year.", m.ErrInvalidInput)
+		return []m.Movie{}, fmt.Errorf("%w: invalid release year.", m.ErrInvalidInput)
 	}
 
 	movies, err := s.repo.FindMoviesByYear(year)
@@ -125,9 +125,13 @@ func (s *MovieService) MoviePatcher(movieData m.MoviePatchDto, movieID int) (m.M
 	return movie, nil
 }
 
-func (s *MovieService) DeleteMovie(movieID int) (bool, error) {
+func (s *MovieService) DeleteMovie(movieID int, force bool) (bool, error) {
 	if movieID <= 0 {
-		return false, fmt.Errorf("%w invalid movie id.", m.ErrBadRequest)
+		return false, fmt.Errorf("%w: invalid movie id.", m.ErrBadRequest)
+	}
+
+	if !force {
+		return false, fmt.Errorf("%w: cannot delete movie, use \"force\" to perform deletion.", m.ErrBadRequest)
 	}
 
 	ok, err := s.repo.DeleteMovieByID(movieID)
@@ -149,11 +153,11 @@ func (s *MovieService) FindActorsInMovie(movieID int) ([]m.ActorInFilmDto, error
 
 func (s *MovieService) AddActorToMovie(movieID, actorID int) (m.MovieDto, error) {
 	if movieID <= 0 {
-		return m.MovieDto{}, fmt.Errorf("%w invalid movie id.", m.ErrBadRequest)
+		return m.MovieDto{}, fmt.Errorf("%w: invalid movie id.", m.ErrBadRequest)
 	}
 
 	if actorID <= 0 {
-		return m.MovieDto{}, fmt.Errorf("%w invalid actor id.", m.ErrBadRequest)
+		return m.MovieDto{}, fmt.Errorf("%w: invalid actor id.", m.ErrBadRequest)
 	}
 
 	err := s.repo.AddActorToMovie(movieID, actorID)
@@ -171,19 +175,19 @@ func (s *MovieService) AddActorToMovie(movieID, actorID int) (m.MovieDto, error)
 
 func (s *MovieService) DeleteActorFromMovie(movieID, actorID int) (m.MovieDto, error) {
 	if movieID <= 0 {
-		return m.MovieDto{}, fmt.Errorf("%w invalid movie id.", m.ErrBadRequest)
+		return m.MovieDto{}, fmt.Errorf("%w: invalid movie id.", m.ErrBadRequest)
 	}
 
 	if actorID <= 0 {
-		return m.MovieDto{}, fmt.Errorf("%w invalid actor id.", m.ErrBadRequest)
+		return m.MovieDto{}, fmt.Errorf("%w: invalid actor id.", m.ErrBadRequest)
 	}
 
-	err := s.repo.RemoveActorFromMovie(movieID, actorID)
+	movie, err := s.repo.FindMovieByID(movieID)
 	if err != nil {
 		return m.MovieDto{}, err
 	}
 
-	movie, err := s.repo.FindMovieByID(movieID)
+	err = s.repo.RemoveActorFromMovie(movieID, actorID)
 	if err != nil {
 		return m.MovieDto{}, err
 	}

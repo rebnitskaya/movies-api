@@ -245,6 +245,18 @@ func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
 		return m.MovieDto{}, m.ErrMovieNotFound
 	}
 
+	moviesGenresMap, err := r.findGenresForMovies()
+	if err != nil {
+		return m.MovieDto{}, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
+	}
+
+	movieInMap, ok := moviesGenresMap[movie.Id]
+	if !ok {
+		return movie, nil
+	}
+
+	movie.Genres = movieInMap.Genres
+
 	return movie, nil
 }
 
@@ -296,7 +308,6 @@ func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[st
 	return movie, nil
 }
 
-// delete with cascade when deleting movie
 func (r movieRepository) DeleteMovieByID(movieID int) (bool, error) {
 	query := `
 		DELETE FROM movies
@@ -305,12 +316,12 @@ func (r movieRepository) DeleteMovieByID(movieID int) (bool, error) {
 
 	res, err := r.db.Exec(query, movieID)
 	if err != nil {
-		return false, fmt.Errorf("%w Something happened during movie deletion: %w", m.ErrInternalIssue, err)
+		return false, fmt.Errorf("%w: something happened during movie deletion: %w", m.ErrInternalIssue, err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return false, fmt.Errorf("%w Something happened during movie deletion: %w", m.ErrInternalIssue, err)
+		return false, fmt.Errorf("%w: something happened during movie deletion: %w", m.ErrInternalIssue, err)
 	}
 
 	if rowsAffected == 0 {
@@ -614,21 +625,35 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int) error {
 		VALUES (?, ?)
 	`
 
-	_, err := r.db.Exec(query, movieID, actorID)
-	if err != nil {
-		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
-	}
-
-	return nil
-}
-
-func (r movieRepository) RemoveActorFromMovie(movieID, actorID int) error {
-	query := `
-		DELETE FROM movie_actors
-		WHERE movie_id = ? AND actor_id = ?
+	checkActor := `
+		SELECT id FROM actors WHERE id = ?
 	`
 
-	_, err := r.db.Exec(query, movieID, actorID)
+	checkMovie := `
+		SELECT id FROM movies WHERE id = ?
+	`
+
+	var id int
+
+	err := r.db.QueryRow(checkActor, actorID).Scan(&id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%w: actor with id %d doesn't exist, can't add it to movie.", m.ErrActorNotFound, actorID)
+		}
+
+		return fmt.Errorf("%w: failed to check genre: %w", m.ErrInternalIssue, err)
+	}
+
+	err = r.db.QueryRow(checkMovie, movieID).Scan(&id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%w: movie with id %d doesn't exist, can't add a genre to it.", m.ErrMovieNotFound, movieID)
+		}
+
+		return fmt.Errorf("%w: failed to check movie: %w", m.ErrInternalIssue, err)
+	}
+
+	_, err = r.db.Exec(query, movieID, actorID)
 	if err != nil {
 		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -642,21 +667,35 @@ func (r movieRepository) AddGenreToMovie(movieID, genreID int) error {
 		VALUES (?, ?)
 	`
 
-	_, err := r.db.Exec(query, movieID, genreID)
-	if err != nil {
-		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
-	}
-
-	return nil
-}
-
-func (r movieRepository) RemoveGenreFromMovie(movieID, genreID int) error {
-	query := `
-		DELETE FROM genres_movies
-		WHERE movie_id = ? AND genre_id = ?
+	checkGenre := `
+		SELECT id FROM genres WHERE id = ?
 	`
 
-	_, err := r.db.Exec(query, movieID, genreID)
+	checkMovie := `
+		SELECT id FROM movies WHERE id = ?
+	`
+
+	var id int
+
+	err := r.db.QueryRow(checkGenre, genreID).Scan(&id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%w: genre with id %d doesn't exist, can't add it to movie.", m.ErrGenreNotFound, genreID)
+		}
+
+		return fmt.Errorf("%w: failed to check genre: %w", m.ErrInternalIssue, err)
+	}
+
+	err = r.db.QueryRow(checkMovie, movieID).Scan(&id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("%w: movie with id %d doesn't exist, can't add a genre to it.", m.ErrMovieNotFound, movieID)
+		}
+
+		return fmt.Errorf("%w: failed to check movie: %w", m.ErrInternalIssue, err)
+	}
+
+	_, err = r.db.Exec(query, movieID, genreID)
 	if err != nil {
 		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -705,4 +744,50 @@ func (r movieRepository) FindGenresInMovie(MovieID int) ([]m.GenreWithoutMovies,
 	}
 
 	return genres, nil
+}
+
+func (r movieRepository) RemoveActorFromMovie(movieID, actorID int) error {
+	query := `
+		DELETE FROM movie_actors
+		WHERE movie_id = ? AND actor_id = ?
+	`
+
+	res, err := r.db.Exec(query, movieID, actorID)
+	if err != nil {
+		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%w: something happened during movie deletion: %w", m.ErrInternalIssue, err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("%w: movie with id %d has no actor with id %d.", m.ErrBadRequest, movieID, actorID)
+	}
+
+	return nil
+}
+
+func (r movieRepository) RemoveGenreFromMovie(movieID, genreID int) error {
+	query := `
+		DELETE FROM genres_movies
+		WHERE movie_id = ? AND genre_id = ?
+	`
+
+	res, err := r.db.Exec(query, movieID, genreID)
+	if err != nil {
+		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%w: something happened during movie deletion: %w", m.ErrInternalIssue, err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("%w: movie with id %d has no genre with id %d.", m.ErrBadRequest, movieID, genreID)
+	}
+
+	return nil
 }
