@@ -79,7 +79,7 @@ func (s *MovieService) GetAllMoviesWithTitle(title string) ([]m.MovieDto, error)
 	return movies, nil
 }
 
-func (s *MovieService) MovieMaker(movieData m.MovieDto) (m.Movie, error) {
+func (s *MovieService) MovieMaker(movieData m.CreateMovieDto) (m.Movie, error) {
 	_, err := movieData.Validate()
 	if err != nil {
 		return m.Movie{}, err
@@ -89,9 +89,10 @@ func (s *MovieService) MovieMaker(movieData m.MovieDto) (m.Movie, error) {
 	if res.Title == movieData.Title && res.ReleaseYear == movieData.ReleaseYear {
 		return m.Movie{}, m.ErrMovieHasBeenMadeBefore
 	}
+
 	movie, error := s.repo.CreateMovie(movieData)
 	if error != nil {
-		return m.Movie{}, err
+		return m.Movie{}, error
 	}
 
 	return movie, nil

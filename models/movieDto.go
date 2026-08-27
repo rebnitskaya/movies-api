@@ -26,7 +26,15 @@ type MovieWithoutActorsDto struct {
 	Duration    int    `json:"duration"`
 }
 
-func (m MovieDto) Validate() (bool, error) {
+type CreateMovieDto struct {
+	Title       string `json:"title"`
+	ReleaseYear int    `json:"releaseYear"`
+	Duration    int    `json:"duration"`
+	Genres      []int  `json:"genres"`
+	Actors      []int  `json:"actors"`
+}
+
+func (m CreateMovieDto) Validate() (bool, error) {
 	if m.Title == "" {
 		return false, fmt.Errorf("%w: title can't be empty.", ErrInvalidInput)
 	}
