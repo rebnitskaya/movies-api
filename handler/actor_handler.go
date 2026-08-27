@@ -3,126 +3,118 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"movies_api/middleware"
 	m "movies_api/models"
 	"net/http"
 	"strconv"
 )
 
-func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) {
+func (h *ActorHandler) GetAllActors(w http.ResponseWriter, r *http.Request) error {
+
+	page, limit, err := middleware.GetPaginationParams(r)
+	if err != nil {
+		return fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
+	}
+
 	query := r.URL.Query()
 
 	// Retrieve actors filtered by name
 	if name := query.Get("name"); name != "" {
 		actors, err := h.service.GetActorsWithName(name)
 		if err != nil {
-			http.Error(w, "Failed to get actors", http.StatusInternalServerError)
-			return
+			return err
 		}
 		w.Header().Set("Content-Type", "application/json")
 
-		err = json.NewEncoder(w).Encode(actors)
-		if err != nil {
-			return
-		}
-
-		return
+		return json.NewEncoder(w).Encode(actors)
 	}
 
-	actors, err := h.service.GetAllActors()
+	actors, err := h.service.GetAllActors(page, limit)
 	if err != nil {
-		http.Error(w, "Failed to get actors", http.StatusInternalServerError)
-		return
+		return err
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(actors)
-	if err != nil {
-		return
-	}
+	return json.NewEncoder(w).Encode(actors)
 }
 
-func (h *ActorHandler) PostActor(w http.ResponseWriter, r *http.Request) {
+func (h *ActorHandler) PostActor(w http.ResponseWriter, r *http.Request) error {
 	var actorData m.ActorDto
 
 	err := json.NewDecoder(r.Body).Decode(&actorData)
+
 	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
-		return
+		return fmt.Errorf("%w: something is wrong with incoming data: %s", m.ErrInvalidInput, err)
 	}
 
-	ok, err := h.service.CreateActor(actorData)
+	createdActor, err := h.service.CreateActor(actorData)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to make an actor. %s", err), http.StatusBadRequest)
-		return
+		return err
 	}
 
-	if ok {
-		w.WriteHeader(http.StatusCreated)
-	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	return json.NewEncoder(w).Encode(createdActor)
+
 }
 
-func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) {
+func (h *ActorHandler) DeleteActor(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid actor id. %s", err), http.StatusBadRequest)
-		return
+		return fmt.Errorf("%w: invalid actor id", m.ErrInvalidInput)
 	}
 
-	err = h.service.DeleteActor(idInt)
+	force := r.URL.Query().Get("force") == "true"
+
+	_, err = h.service.DeleteActor(idInt, force)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to delete an actor. %s", err), http.StatusNotFound)
-		return
+		return err
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+
+	return nil
 }
 
-func (h *ActorHandler) GetActor(w http.ResponseWriter, r *http.Request) {
+func (h *ActorHandler) GetActor(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get an actor. %s", err), http.StatusBadRequest)
-		return
+		return fmt.Errorf("%w: invalid actor id", m.ErrInvalidInput)
 	}
 
 	actor, err := h.service.GetActor(idInt)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to get an actor. %s", err), http.StatusBadRequest)
-		return
+		return err
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 
-	err = json.NewEncoder(w).Encode(actor)
-	if err != nil {
-		return
-	}
+	return json.NewEncoder(w).Encode(actor)
 }
 
-func (h *ActorHandler) PatchActor(w http.ResponseWriter, r *http.Request) {
+func (h *ActorHandler) PatchActor(w http.ResponseWriter, r *http.Request) error {
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid actor id. %s", err), http.StatusBadRequest)
-		return
+		return fmt.Errorf("%w: invalid actor id", m.ErrInvalidInput)
 	}
 
 	data := make(map[string]string)
 
 	err = json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid request body. %s", err), http.StatusBadRequest)
-		return
+		return fmt.Errorf("%w: something is wrong with incoming data: %s", m.ErrInvalidInput, err)
 	}
 
 	actor, err := h.service.PatchActor(idInt, data)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Failed to update an actor. %s", err), http.StatusBadRequest)
-		return
+		return err
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(actor)
-
+	return json.NewEncoder(w).Encode(actor)
 }

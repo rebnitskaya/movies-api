@@ -2,45 +2,135 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
+	m "movies_api/models"
 	"net/http"
+	"strconv"
 )
 
-func (h *GenreHandler) GetAllGenres(w http.ResponseWriter, r *http.Request) {
-	actors, err := h.service.GetAllGenres()
+func (h *GenreHandler) GetAllGenres(w http.ResponseWriter, r *http.Request) error {
+	genres, err := h.service.GetAllGenres()
 	if err != nil {
-		http.Error(w, "failed to get movies", http.StatusInternalServerError)
-		return
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	return json.NewEncoder(w).Encode(genres)
+}
+
+func (h *GenreHandler) GetGenre(w http.ResponseWriter, r *http.Request) error {
+	id := r.PathValue("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return fmt.Errorf("%w: invalid genre id", m.ErrInvalidInput)
+	}
+
+	genre, err := h.service.GetGenre(idInt)
+	if err != nil {
+		return err
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(genre)
+}
 
-	err = json.NewEncoder(w).Encode(actors)
+func (h *GenreHandler) PostGenre(w http.ResponseWriter, r *http.Request) error {
+	var genre m.Genre
+	err := json.NewDecoder(r.Body).Decode(&genre)
 	if err != nil {
-		return
+		return fmt.Errorf("%w: invalid request body", m.ErrBadRequest)
 	}
+
+	createdGenre, err := h.service.CreateGenre(genre.Name)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+
+	return json.NewEncoder(w).Encode(createdGenre)
 }
 
-func (h *GenreHandler) GetGenre(w http.ResponseWriter, r *http.Request) {
-	id := 0
-	h.service.GetGenre(id)
-	w.WriteHeader(http.StatusNoContent)
+func (h *GenreHandler) PatchGenre(w http.ResponseWriter, r *http.Request) error {
+	id := r.PathValue("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return fmt.Errorf("%w: invalid genre id", m.ErrInvalidInput)
+	}
+
+	var genreData m.GenreDto
+
+	err = json.NewDecoder(r.Body).Decode(&genreData)
+	if err != nil {
+		return fmt.Errorf("%w: invalid request body", m.ErrBadRequest)
+	}
+
+	genre, err := h.service.PatchGenre(idInt, genreData.Name)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(genre)
 }
 
-func (h *GenreHandler) PostGenre(w http.ResponseWriter, r *http.Request) {
-	name := ""
-	h.service.CreateGenre(name)
+func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) error {
+	id := r.PathValue("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		return fmt.Errorf("%w: invalid genre id", m.ErrInvalidInput)
+	}
+
+	force := r.URL.Query().Get("force") == "true"
+
+	_, err = h.service.DeleteGenre(idInt, force)
+	if err != nil {
+		return err
+	}
+
 	w.WriteHeader(http.StatusNoContent)
+
+	return nil
 }
 
-func (h *GenreHandler) PatchGenre(w http.ResponseWriter, r *http.Request) {
-	id := 0
-	name := ""
-	h.service.PatchGenre(id, name)
-	w.WriteHeader(http.StatusNoContent)
+func (h *MovieHandler) PostGenreToMovie(w http.ResponseWriter, r *http.Request) error {
+	movieID, err := strconv.Atoi(r.PathValue("movieID"))
+	if err != nil {
+		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
+	}
+	genreID, err := strconv.Atoi(r.PathValue("genreID"))
+	if err != nil {
+		return fmt.Errorf("%w: invalid genre id", m.ErrInvalidInput)
+	}
+
+	movie, err := h.service.AddGenreToMovie(movieID, genreID)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	return json.NewEncoder(w).Encode(movie)
 }
 
-func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) {
-	id := 0
-	h.service.DeleteGenre(id)
-	w.WriteHeader(http.StatusNoContent)
+func (h *MovieHandler) DeleteGenreFromMovie(w http.ResponseWriter, r *http.Request) error {
+	movieID, err := strconv.Atoi(r.PathValue("movieID"))
+	if err != nil {
+		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
+	}
+	genreID, err := strconv.Atoi(r.PathValue("genreID"))
+	if err != nil {
+		return fmt.Errorf("%w: invalid genre id", m.ErrInvalidInput)
+	}
+
+	movie, err := h.service.DeleteGenreFromMovie(movieID, genreID)
+	if err != nil {
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	return json.NewEncoder(w).Encode(movie)
 }

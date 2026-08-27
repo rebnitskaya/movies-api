@@ -36,6 +36,8 @@ func Server(ctx context.Context) (*http.Server, error) {
 		return nil, fmt.Errorf("Can't initiate tables: %w", err)
 	}
 
+	db.SeedDatabase(dataBase) //fill with init data
+
 	dependencyWiring(mux, dataBase)
 
 	srv := &http.Server{

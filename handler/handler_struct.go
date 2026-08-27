@@ -1,6 +1,8 @@
 package handler
 
-import "movies_api/service"
+import (
+	"movies_api/service"
+)
 
 type MovieHandler struct {
 	service *service.MovieService
