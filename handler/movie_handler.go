@@ -99,21 +99,23 @@ func (h *MovieHandler) GetMovie(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) error {
-	movieDto := m.MovieDto{}
+	movieDto := m.CreateMovieDto{}
 
 	err := json.NewDecoder(r.Body).Decode(&movieDto)
 	if err != nil {
 		return fmt.Errorf("%w: something is wrong with incoming data: %s", m.ErrInvalidInput, err)
 	}
 
-	m, err := h.service.MovieMaker(movieDto)
+	movie, err := h.service.MovieMaker(movieDto)
 	if err != nil {
 		return err
 	}
 
+	message := fmt.Sprintf("New movie created. Movie id: %d", movie.Id)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	return json.NewEncoder(w).Encode(m)
+	return json.NewEncoder(w).Encode(message)
 }
 
 func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) error {
