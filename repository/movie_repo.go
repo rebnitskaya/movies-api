@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-func (r movieRepository) FindAllMovies(isSearch bool, title string) ([]models.MovieDto, error) {
-	moviesActorsMap, err := r.findActorsForMovies(isSearch, title)
+func (r movieRepository) FindAllMovies(isSearch bool, title string, limit, offset int) ([]models.MovieDto, error) {
+	moviesActorsMap, err := r.findActorsForMovies(isSearch, title, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
 	}
@@ -35,20 +35,32 @@ func (r movieRepository) FindAllMovies(isSearch bool, title string) ([]models.Mo
 	return movies, nil
 }
 
-func (r movieRepository) findActorsForMovies(isSearch bool, title string) (map[int]*models.MovieDto, error) {
+func (r movieRepository) findActorsForMovies(isSearch bool, title string, limit, offset int) (map[int]*models.MovieDto, error) {
 	query := `
-		SELECT m.id, m.title, m.release_year, m.duration, a.id, a.name, a.birth_date
-		FROM movies m
-		LEFT JOIN movie_actors ma ON ma.movie_id = m.id
-		LEFT JOIN actors a ON a.id = ma.actor_id
-	`
+			SELECT m.id, m.title, m.release_year, m.duration,
+			       a.id, a.name, a.birth_date
+			FROM (
+				SELECT id, title, release_year, duration
+				FROM movies
+		`
 
 	var args []any
 
 	if isSearch {
-		query += ` WHERE m.title LIKE ?`
+		query += ` WHERE title LIKE ?`
 		args = append(args, "%"+title+"%")
 	}
+
+	query += `
+				ORDER BY id
+				LIMIT ? OFFSET ?
+			) m
+			LEFT JOIN movie_actors ma ON ma.movie_id = m.id
+			LEFT JOIN actors a ON a.id = ma.actor_id
+			ORDER BY m.id
+		`
+
+	args = append(args, limit, offset)
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
@@ -121,6 +133,8 @@ func (r movieRepository) findGenresForMovies() (map[int]*models.MovieDto, error)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
+
+	defer rows.Close()
 
 	moviesMap := make(map[int]*models.MovieDto)
 
@@ -878,4 +892,20 @@ func (r movieRepository) genreExists(tx *sql.Tx, genreID int) error {
 	}
 
 	return nil
+}
+
+func (r movieRepository) CountMovies() (int, error) {
+	var count int
+
+	query := `
+			SELECT COUNT(*)
+			FROM movies
+		`
+
+	err := r.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

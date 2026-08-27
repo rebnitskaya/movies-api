@@ -4,6 +4,13 @@ import (
 	"fmt"
 )
 
+type MoviesPaginated struct {
+	Movies     []MovieDto `json:"movies"`
+	Page       int        `json:"page"`
+	PageSize   int        `json:"pageSize"`
+	TotalPages int        `json:"totalPages"`
+}
+
 type MovieDto struct {
 	Id          int                  `json:"id"`
 	Title       string               `json:"title"`

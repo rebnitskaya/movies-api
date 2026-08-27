@@ -317,3 +317,19 @@ func (r actorRepository) FindActorsByName(name string) ([]m.Actor, error) {
 
 	return actors, nil
 }
+
+func (r actorRepository) CountActors() (int, error) {
+	var count int
+
+	query := `
+			SELECT COUNT(*)
+			FROM actors
+		`
+
+	err := r.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}

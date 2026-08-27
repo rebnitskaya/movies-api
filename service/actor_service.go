@@ -12,13 +12,13 @@ type ActorService struct {
 	repo r.ActorRepository
 }
 
-func (s *ActorService) GetAllActors(page, limit int) ([]m.ActorWithoutMoviesDto, error) {
+func (s *ActorService) GetAllActors(page, limit int) (m.ActorsPaginated, error) {
 
 	offset := (page - 1) * limit
 
 	actors, err := s.repo.FindAllActors(limit, offset)
 	if err != nil {
-		return nil, err
+		return m.ActorsPaginated{}, err
 	}
 
 	sort.Slice(actors, func(i, j int) bool {
@@ -45,7 +45,21 @@ func (s *ActorService) GetAllActors(page, limit int) ([]m.ActorWithoutMoviesDto,
 		}
 		result = append(result, actorDTO)
 	}
-	return result, nil
+
+	pageSize := len(result)
+	totalActors, err := s.repo.CountActors()
+	if err != nil {
+		return m.ActorsPaginated{}, err
+	}
+
+	totalPages := (totalActors + limit - 1) / limit
+
+	return m.ActorsPaginated{
+		Actors:     result,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
 }
 
 func (s *ActorService) CreateActor(actorData m.ActorDto) (m.Actor, error) {

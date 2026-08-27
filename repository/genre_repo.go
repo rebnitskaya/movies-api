@@ -7,16 +7,21 @@ import (
 	m "movies_api/models"
 )
 
-func (r genreRepository) FindAllGenres() ([]m.Genre, error) {
+func (r genreRepository) FindAllGenres(limit, offset int) ([]m.Genre, error) {
 	query := `
 		SELECT g.id, g.name, m.id, m.title, m.release_year, m.duration
-		FROM genres g
+		FROM (
+	    	SELECT id, name
+	     	FROM genres
+	     	ORDER BY id
+	      	LIMIT ? OFFSET ?
+	    ) g
 		LEFT JOIN genres_movies mg ON g.id = mg.genre_id
 		LEFT JOIN movies m ON mg.movie_id = m.id
 		ORDER by g.id
 	`
 
-	rows, err := r.db.Query(query)
+	rows, err := r.db.Query(query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -24,9 +29,8 @@ func (r genreRepository) FindAllGenres() ([]m.Genre, error) {
 
 	genresMap := make(map[int]*m.Genre)
 
-	found := false
 	for rows.Next() {
-		found = true
+
 		var genre m.Genre
 
 		var movieID sql.NullInt64
@@ -74,10 +78,6 @@ func (r genreRepository) FindAllGenres() ([]m.Genre, error) {
 
 	for _, genre := range genresMap {
 		genres = append(genres, *genre)
-	}
-
-	if !found {
-		return nil, m.ErrGenreNotFound
 	}
 
 	return genres, nil
@@ -226,4 +226,20 @@ func (r genreRepository) FindGenreByName(name string) (m.Genre, error) {
 	}
 
 	return genre, nil
+}
+
+func (r genreRepository) CountGenres() (int, error) {
+	var count int
+
+	query := `
+			SELECT COUNT(*)
+			FROM genres
+		`
+
+	err := r.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

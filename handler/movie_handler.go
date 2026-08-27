@@ -3,12 +3,19 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"movies_api/middleware"
 	m "movies_api/models"
 	"net/http"
 	"strconv"
 )
 
 func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
+
+	page, limit, err := middleware.GetPaginationParams(r)
+	if err != nil {
+		return fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
+	}
+
 	query := r.URL.Query()
 
 	w.Header().Set("Content-Type", "application/json")
@@ -56,7 +63,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 		return json.NewEncoder(w).Encode(movies)
 	}
 
-	movies, err := h.service.GetAllMovies()
+	movies, err := h.service.GetAllMovies(page, limit)
 	if err != nil {
 		return err
 	}
@@ -65,13 +72,18 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *MovieHandler) SearchByTitle(w http.ResponseWriter, r *http.Request) error {
+	page, limit, err := middleware.GetPaginationParams(r)
+	if err != nil {
+		return fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
+	}
+
 	query := r.URL.Query()
 
 	w.Header().Set("Content-Type", "application/json")
 
 	//not yet ready
 	if title := query.Get("title"); title != "" {
-		movies, err := h.service.GetAllMoviesWithTitle(title)
+		movies, err := h.service.GetAllMoviesWithTitle(title, page, limit)
 		if err != nil {
 			return err
 		}

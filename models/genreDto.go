@@ -20,6 +20,13 @@ type MovieSummaryDto struct {
 	Name string `json:"movieName"`
 }
 
+type GenresPaginated struct {
+	Genres     []GenreDto `json:"genres"`
+	Page       int        `json:"page"`
+	PageSize   int        `json:"pageSize"`
+	TotalPages int        `json:"totalPages"`
+}
+
 func (m GenreDto) Validate() (bool, error) {
 	fmt.Errorf("Some error")
 	return true, nil
