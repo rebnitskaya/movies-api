@@ -19,7 +19,7 @@ type Config struct {
 	Port string
 }
 
-func Server(ctx context.Context) (*http.Server, error) {
+func Server(ctx context.Context, init bool) (*http.Server, error) {
 	mux := http.NewServeMux()
 
 	cfg := Config{
@@ -36,7 +36,9 @@ func Server(ctx context.Context) (*http.Server, error) {
 		return nil, fmt.Errorf("Can't initiate tables: %w", err)
 	}
 
-	db.SeedDatabase(dataBase) //fill with init data
+	if init {
+		db.SeedDatabase(dataBase) //fill with init data
+	}
 
 	dependencyWiring(mux, dataBase)
 
