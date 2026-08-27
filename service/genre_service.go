@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	m "movies_api/models"
 	r "movies_api/repository"
@@ -180,10 +181,12 @@ func (s *MovieService) DeleteGenreFromMovie(movieID, genreID int) (m.MovieDto, e
 
 	genres, err := s.repo.FindGenresInMovie(movieID)
 	if err != nil {
-		return m.MovieDto{}, err
+		if errors.Is(err, m.ErrGenreNotFound) {
+			movie.Genres = genres
+		} else {
+			return m.MovieDto{}, err
+		}
 	}
-
-	movie.Genres = genres
 
 	return movie, nil
 }
