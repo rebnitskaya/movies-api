@@ -5,6 +5,7 @@ import (
 	m "movies_api/models"
 	r "movies_api/repository"
 	"slices"
+	"strings"
 )
 
 type MovieService struct {
@@ -12,7 +13,7 @@ type MovieService struct {
 }
 
 func (s *MovieService) GetAllMovies() ([]m.MovieDto, error) {
-	movies, err := s.repo.FindAllMovies()
+	movies, err := s.repo.FindAllMovies(false, "")
 	if err != nil {
 		return []m.MovieDto{}, err
 	}
@@ -56,6 +57,19 @@ func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.Movie, error) {
 
 func (s *MovieService) GetAllMoviesWithActor(actorID int) ([]m.MovieDto, error) {
 	movies, err := s.repo.FindMoviesWithActor(actorID)
+	if err != nil {
+		return []m.MovieDto{}, err
+	}
+
+	sortMovies(movies)
+
+	return movies, nil
+}
+
+func (s *MovieService) GetAllMoviesWithTitle(title string) ([]m.MovieDto, error) {
+	title = strings.ToLower(title)
+
+	movies, err := s.repo.FindAllMovies(true, title)
 	if err != nil {
 		return []m.MovieDto{}, err
 	}

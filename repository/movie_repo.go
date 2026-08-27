@@ -9,8 +9,8 @@ import (
 	"strings"
 )
 
-func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
-	moviesActorsMap, err := r.findActorsForMovies()
+func (r movieRepository) FindAllMovies(isSearch bool, title string) ([]models.MovieDto, error) {
+	moviesActorsMap, err := r.findActorsForMovies(isSearch, title)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
 	}
@@ -35,7 +35,7 @@ func (r movieRepository) FindAllMovies() ([]models.MovieDto, error) {
 	return movies, nil
 }
 
-func (r movieRepository) findActorsForMovies() (map[int]*models.MovieDto, error) {
+func (r movieRepository) findActorsForMovies(isSearch bool, title string) (map[int]*models.MovieDto, error) {
 	query := `
 		SELECT m.id, m.title, m.release_year, m.duration, a.id, a.name, a.birth_date
 		FROM movies m
@@ -43,7 +43,14 @@ func (r movieRepository) findActorsForMovies() (map[int]*models.MovieDto, error)
 		LEFT JOIN actors a ON a.id = ma.actor_id
 	`
 
-	rows, err := r.db.Query(query)
+	var args []any
+
+	if isSearch {
+		query += ` WHERE m.title LIKE ?`
+		args = append(args, "%"+title+"%")
+	}
+
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -289,6 +296,7 @@ func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[st
 	return movie, nil
 }
 
+// delete with cascade when deleting movie
 func (r movieRepository) DeleteMovieByID(movieID int) (bool, error) {
 	query := `
 		DELETE FROM movies
