@@ -10,55 +10,58 @@ import (
 )
 
 func (r movieRepository) FindAllMovies(isSearch bool, title string, limit, offset int) ([]models.MovieDto, error) {
-	moviesActorsMap, err := r.findActorsForMovies(isSearch, title, limit, offset)
+	movies, err := r.findMovies(isSearch, title, limit, offset)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
+		return nil, err
 	}
 
-	moviesGenresMap, err := r.findGenresForMovies()
+	movieIDs := make([]int, 0, len(movies))
+
+	for id := range movies {
+		movieIDs = append(movieIDs, id)
+	}
+
+	actors, err := r.findActorsForMovies(movieIDs)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
+		return nil, err
 	}
 
-	for movieID, genres := range moviesGenresMap {
-		if movie, exists := moviesActorsMap[movieID]; exists {
-			movie.Genres = genres.Genres
-		}
+	genres, err := r.findGenresForMovies(movieIDs)
+	if err != nil {
+		return nil, err
 	}
 
-	movies := make([]models.MovieDto, 0, len(moviesActorsMap))
-
-	for _, movie := range moviesActorsMap {
-		movies = append(movies, *movie)
+	for id, movie := range movies {
+		movie.Actors = actors[id]
+		movie.Genres = genres[id]
 	}
 
-	return movies, nil
+	result := make([]models.MovieDto, 0, len(movies))
+
+	for _, movie := range movies {
+		result = append(result, *movie)
+	}
+
+	return result, nil
 }
 
-func (r movieRepository) findActorsForMovies(isSearch bool, title string, limit, offset int) (map[int]*models.MovieDto, error) {
+func (r movieRepository) findMovies(isSearch bool, title string, limit, offset int) (map[int]*models.MovieDto, error) {
 	query := `
-			SELECT m.id, m.title, m.release_year, m.duration,
-			       a.id, a.name, a.birth_date
-			FROM (
-				SELECT id, title, release_year, duration
-				FROM movies
-		`
+		SELECT id, title, release_year, duration
+		FROM movies
+	`
 
 	var args []any
 
 	if isSearch {
-		query += ` WHERE m.title LIKE ? COLLATE NOCASE`
+		query += ` WHERE title LIKE ? COLLATE NOCASE`
 		args = append(args, "%"+title+"%")
 	}
 
 	query += `
-				ORDER BY id
-				LIMIT ? OFFSET ?
-			) m
-			LEFT JOIN movie_actors ma ON ma.movie_id = m.id
-			LEFT JOIN actors a ON a.id = ma.actor_id
-			ORDER BY m.id
-		`
+		ORDER BY id
+		LIMIT ? OFFSET ?
+	`
 
 	args = append(args, limit, offset)
 
@@ -66,53 +69,24 @@ func (r movieRepository) findActorsForMovies(isSearch bool, title string, limit,
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
+	defer rows.Close()
 
 	moviesMap := make(map[int]*models.MovieDto)
 
 	for rows.Next() {
-		var movieID int
-		var title string
-		var releaseYear int
-		var duration int
-
-		var actorID sql.NullInt64
-		var actorName sql.NullString
-		var actorBirthDate sql.NullString
+		var movie models.MovieDto
 
 		err := rows.Scan(
-			&movieID,
-			&title,
-			&releaseYear,
-			&duration,
-			&actorID,
-			&actorName,
-			&actorBirthDate,
+			&movie.Id,
+			&movie.Title,
+			&movie.ReleaseYear,
+			&movie.Duration,
 		)
-
 		if err != nil {
 			return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
-		movie, exists := moviesMap[movieID]
-
-		if !exists {
-			movie = &models.MovieDto{
-				Id:          movieID,
-				Title:       title,
-				ReleaseYear: releaseYear,
-				Duration:    duration,
-			}
-
-			moviesMap[movieID] = movie
-		}
-
-		if actorID.Valid {
-			movie.Actors = append(movie.Actors, m.ActorInFilmDto{
-				Id:        int(actorID.Int64),
-				Name:      actorName.String,
-				BirthDate: actorBirthDate.String,
-			})
-		}
+		moviesMap[movie.Id] = &movie
 	}
 
 	if err := rows.Err(); err != nil {
@@ -122,61 +96,122 @@ func (r movieRepository) findActorsForMovies(isSearch bool, title string, limit,
 	return moviesMap, nil
 }
 
-func (r movieRepository) findGenresForMovies() (map[int]*models.MovieDto, error) {
-	query := `
-		SELECT gm.movie_id, g.id, g.name
-		FROM genres_movies gm
-		JOIN genres g ON g.id = gm.genre_id
-	`
+func (r movieRepository) findActorsForMovies(movieIDs []int) (map[int][]models.ActorInFilmDto, error) {
+	if len(movieIDs) == 0 {
+		return nil, nil
+	}
 
-	rows, err := r.db.Query(query)
+	placeholders := make([]string, len(movieIDs))
+	args := make([]any, len(movieIDs))
+
+	for i, movieID := range movieIDs {
+		placeholders[i] = "?"
+		args[i] = movieID
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			ma.movie_id,
+			a.id,
+			a.name,
+			a.birth_date
+		FROM movie_actors ma
+		JOIN actors a ON a.id = ma.actor_id
+		WHERE ma.movie_id IN (%s)
+		ORDER BY ma.movie_id, a.id
+	`, strings.Join(placeholders, ","))
+
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
-
 	defer rows.Close()
 
-	moviesMap := make(map[int]*models.MovieDto)
+	actorsMap := make(map[int][]models.ActorInFilmDto)
 
 	for rows.Next() {
 		var movieID int
-
-		var genreID sql.NullInt64
-		var genreName sql.NullString
+		var actor models.ActorInFilmDto
 
 		err := rows.Scan(
 			&movieID,
-			&genreID,
-			&genreName,
+			&actor.Id,
+			&actor.Name,
+			&actor.BirthDate,
 		)
-
 		if err != nil {
 			return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
-		movie, exists := moviesMap[movieID]
-
-		if !exists {
-			movie = &models.MovieDto{
-				Id: movieID,
-			}
-
-			moviesMap[movieID] = movie
-		}
-
-		if genreID.Valid {
-			movie.Genres = append(movie.Genres, m.GenreWithoutMovies{
-				Id:   int(genreID.Int64),
-				Name: genreName.String,
-			})
-		}
+		actorsMap[movieID] = append(
+			actorsMap[movieID],
+			actor,
+		)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
-	return moviesMap, nil
+	return actorsMap, nil
+}
+
+func (r movieRepository) findGenresForMovies(
+	movieIDs []int,
+) (map[int][]models.GenreWithoutMovies, error) {
+
+	if len(movieIDs) == 0 {
+		return make(map[int][]models.GenreWithoutMovies), nil
+	}
+
+	placeholders := make([]string, len(movieIDs))
+	args := make([]any, len(movieIDs))
+
+	for i, movieID := range movieIDs {
+		placeholders[i] = "?"
+		args[i] = movieID
+	}
+
+	query := fmt.Sprintf(`
+		SELECT
+			gm.movie_id,
+			g.id,
+			g.name
+		FROM genres_movies gm
+		JOIN genres g ON g.id = gm.genre_id
+		WHERE gm.movie_id IN (%s)
+		ORDER BY gm.movie_id, g.id
+	`, strings.Join(placeholders, ","))
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+	}
+
+	genresMap := make(map[int][]models.GenreWithoutMovies)
+
+	for rows.Next() {
+		var movieID int
+		var genre models.GenreWithoutMovies
+
+		err := rows.Scan(
+			&movieID,
+			&genre.Id,
+			&genre.Name,
+		)
+
+		if err != nil {
+			return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+		}
+
+		genresMap[movieID] = append(genresMap[movieID], genre)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
+	}
+
+	return genresMap, nil
 }
 
 func (r movieRepository) CreateMovie(movieData models.CreateMovieDto) (models.Movie, error) {
@@ -308,7 +343,7 @@ func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
 		return m.MovieDto{}, m.ErrMovieNotFound
 	}
 
-	moviesGenresMap, err := r.findGenresForMovies()
+	moviesGenresMap, err := r.findGenresForMovies([]int{movie.Id})
 	if err != nil {
 		return m.MovieDto{}, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
 	}
@@ -318,7 +353,7 @@ func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
 		return movie, nil
 	}
 
-	movie.Genres = movieInMap.Genres
+	movie.Genres = movieInMap
 
 	return movie, nil
 }
@@ -415,6 +450,7 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 	defer rows.Close()
 
 	moviesMap := make(map[int]*models.MovieDto)
+	moviesIDs := []int{}
 	found := false
 
 	for rows.Next() {
@@ -451,6 +487,7 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 			}
 
 			moviesMap[movieID] = movie
+			moviesIDs = append(moviesIDs, movieID)
 		}
 
 		if genreID.Valid {
@@ -469,14 +506,14 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 		return nil, m.ErrMovieNotFound
 	}
 
-	moviesActorsMap, err := r.findActorsForMovies(false, "")
+	moviesActorsMap, err := r.findActorsForMovies(moviesIDs)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
 	}
 
 	movies := make([]m.MovieDto, 0, len(moviesMap))
 	for i, v := range moviesMap {
-		v.Actors = moviesActorsMap[i].Actors
+		v.Actors = moviesActorsMap[i]
 		movies = append(movies, *v)
 	}
 
@@ -493,6 +530,7 @@ func (r movieRepository) FindMoviesByYear(year int) ([]models.MovieDto, error) {
 	`
 
 	moviesMap := make(map[int]*models.MovieDto)
+	movieIDs := []int{}
 	rows, err := r.db.Query(query, year)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
@@ -524,6 +562,7 @@ func (r movieRepository) FindMoviesByYear(year int) ([]models.MovieDto, error) {
 		}
 
 		movie, exists := moviesMap[movieID]
+		movieIDs = append(movieIDs, movieID)
 
 		if !exists {
 			movie = &models.MovieDto{
@@ -552,14 +591,14 @@ func (r movieRepository) FindMoviesByYear(year int) ([]models.MovieDto, error) {
 		return nil, m.ErrMovieNotFound
 	}
 
-	moviesActorsMap, err := r.findActorsForMovies(false, "")
+	moviesActorsMap, err := r.findActorsForMovies(movieIDs)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
 	}
 
 	movies := make([]m.MovieDto, 0, len(moviesMap))
 	for i, v := range moviesMap {
-		v.Actors = moviesActorsMap[i].Actors
+		v.Actors = moviesActorsMap[i]
 		movies = append(movies, *v)
 	}
 
@@ -587,6 +626,7 @@ func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, er
 	defer rows.Close()
 
 	moviesMap := make(map[int]*models.MovieDto)
+	movieIDs := []int{}
 	found := false
 
 	for rows.Next() {
@@ -615,7 +655,7 @@ func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, er
 		}
 
 		movie, exists := moviesMap[movieID]
-
+		movieIDs = append(movieIDs, movieID)
 		if !exists {
 			movie = &models.MovieDto{
 				Id:          movieID,
@@ -644,14 +684,14 @@ func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, er
 		return nil, m.ErrMovieNotFound
 	}
 
-	moviesGenresMap, err := r.findGenresForMovies()
+	moviesGenresMap, err := r.findGenresForMovies(movieIDs)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
 	}
 
 	movies := make([]m.MovieDto, 0, len(moviesMap))
 	for i, v := range moviesMap {
-		v.Genres = moviesGenresMap[i].Genres
+		v.Genres = moviesGenresMap[i]
 		movies = append(movies, *v)
 	}
 
