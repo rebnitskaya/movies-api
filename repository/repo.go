@@ -36,7 +36,7 @@ type ActorRepository interface {
 	DeleteActorByID(int) (bool, error)
 	FindActorByID(int) (m.Actor, error)
 	ReplaceFieldsInActor(int, map[string]string) (m.Actor, error)
-	FindActorsByName(string) ([]m.Actor, error)
+	FindActorsByName(string) ([]m.ActorWithoutMoviesDto, error)
 	CountActors() (int, error)
 }
 

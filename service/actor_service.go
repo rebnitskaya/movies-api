@@ -161,10 +161,31 @@ func (s *ActorService) PatchActor(actorId int, data map[string]string) (m.Actor,
 	return actor, nil
 }
 
-func (s *ActorService) GetActorsWithName(name string) ([]m.Actor, error) {
+func (s *ActorService) GetActorsWithName(name string) ([]m.ActorWithoutMoviesDto, error) {
 	actors, err := s.repo.FindActorsByName(name)
 	if err != nil {
 		return nil, err
 	}
-	return actors, nil
+
+	result := make([]m.ActorWithoutMoviesDto, 0, len(actors))
+
+	for _, actor := range actors {
+		actorDto := m.ActorWithoutMoviesDto{
+			Id:        actor.Id,
+			Name:      actor.Name,
+			BirthDate: actor.BirthDate,
+			Movies:    []m.MovieWithoutActorsDto{},
+		}
+
+		for _, movie := range actor.Movies {
+			actorDto.Movies = append(actor.Movies, m.MovieWithoutActorsDto{
+				Id:          movie.Id,
+				Title:       movie.Title,
+				ReleaseYear: movie.ReleaseYear,
+				Duration:    movie.Duration,
+			})
+		}
+		result = append(result, actorDto)
+	}
+	return result, nil
 }
