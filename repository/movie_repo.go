@@ -995,9 +995,9 @@ func (r movieRepository) CountMovies() (int, error) {
 	var count int
 
 	query := `
-			SELECT COUNT(*)
-			FROM movies
-		`
+		SELECT COUNT(*)
+		FROM movies
+	`
 
 	err := r.db.QueryRow(query).Scan(&count)
 	if err != nil {
