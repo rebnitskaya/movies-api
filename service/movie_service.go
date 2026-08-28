@@ -56,7 +56,6 @@ func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]m.MovieDto, error) 
 	if genreID <= 0 {
 		return []m.MovieDto{}, fmt.Errorf("%w: invalid id", m.ErrInvalidInput)
 	}
-	fmt.Println("here")
 	movies, err := s.repo.FindMoviesByGenre(genreID)
 	if err != nil {
 		return []m.MovieDto{}, err

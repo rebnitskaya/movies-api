@@ -398,9 +398,13 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 	query := `
 		SELECT m.id, m.title, m.release_year, m.duration, g.id, g.name
 		FROM movies m
-		LEFT JOIN genres_movies gm ON gm.movie_id = m.id
-		LEFT JOIN genres a ON g.id = gm.genre_id
-		WHERE g.id = ?
+		JOIN genres_movies gm ON gm.movie_id = m.id
+		JOIN genres g ON g.id = gm.genre_id
+		WHERE m.id IN (
+		    SELECT movie_id
+		    FROM genres_movies
+		    WHERE genre_id = ?
+		)
 	`
 
 	rows, err := r.db.Query(query, genreID)
@@ -450,7 +454,7 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 		}
 
 		if genreID.Valid {
-			movie.Actors = append(movie.Actors, m.ActorInFilmDto{
+			movie.Genres = append(movie.Genres, m.GenreWithoutMovies{
 				Id:   int(genreID.Int64),
 				Name: genreName.String,
 			})
@@ -465,8 +469,14 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 		return nil, m.ErrMovieNotFound
 	}
 
+	moviesActorsMap, err := r.findActorsForMovies(false, "")
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
+	}
+
 	movies := make([]m.MovieDto, 0, len(moviesMap))
-	for _, v := range moviesMap {
+	for i, v := range moviesMap {
+		v.Actors = moviesActorsMap[i].Actors
 		movies = append(movies, *v)
 	}
 
