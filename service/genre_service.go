@@ -12,10 +12,12 @@ type GenreService struct {
 	repo r.GenreRepository
 }
 
-func (s *GenreService) GetAllGenres() ([]m.GenreDto, error) {
-	genres, err := s.repo.FindAllGenres()
+func (s *GenreService) GetAllGenres(page, limit int) (m.GenresPaginated, error) {
+	offset := (page - 1) * limit
+
+	genres, err := s.repo.FindAllGenres(limit, offset)
 	if err != nil {
-		return nil, err
+		return m.GenresPaginated{}, err
 	}
 	sort.Slice(genres, func(i, j int) bool {
 		return genres[i].Id < genres[j].Id
@@ -36,7 +38,21 @@ func (s *GenreService) GetAllGenres() ([]m.GenreDto, error) {
 		}
 		result = append(result, genreDTO)
 	}
-	return result, nil
+
+	pageSize := len(result)
+	totalGenres, err := s.repo.CountGenres()
+	if err != nil {
+		return m.GenresPaginated{}, err
+	}
+
+	totalPages := (totalGenres + limit - 1) / limit
+
+	return m.GenresPaginated{
+		Genres:     result,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
 }
 
 func (s *GenreService) GetGenre(id int) (m.GenreDto, error) {

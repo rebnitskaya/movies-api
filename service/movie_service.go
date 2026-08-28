@@ -12,15 +12,31 @@ type MovieService struct {
 	repo r.MovieRepository
 }
 
-func (s *MovieService) GetAllMovies() ([]m.MovieDto, error) {
-	movies, err := s.repo.FindAllMovies(false, "")
+func (s *MovieService) GetAllMovies(page, limit int) (m.MoviesPaginated, error) {
+
+	offset := (page - 1) * limit
+	movies, err := s.repo.FindAllMovies(false, "", limit, offset)
 	if err != nil {
-		return []m.MovieDto{}, err
+		return m.MoviesPaginated{}, err
 	}
 
 	sortMovies(movies)
 
-	return movies, nil
+	pageSize := len(movies)
+	totalGenres, err := s.repo.CountMovies()
+	if err != nil {
+		return m.MoviesPaginated{}, err
+	}
+
+	totalPages := (totalGenres + limit - 1) / limit
+
+	return m.MoviesPaginated{
+		Movies:     movies,
+		Page:       page,
+		PageSize:   pageSize,
+		TotalPages: totalPages,
+	}, nil
+
 }
 
 func (s *MovieService) FindOneMovie(id int) (m.MovieDto, error) {
@@ -66,10 +82,12 @@ func (s *MovieService) GetAllMoviesWithActor(actorID int) ([]m.MovieDto, error) 
 	return movies, nil
 }
 
-func (s *MovieService) GetAllMoviesWithTitle(title string) ([]m.MovieDto, error) {
+func (s *MovieService) GetAllMoviesWithTitle(title string, page, limit int) ([]m.MovieDto, error) {
 	title = strings.ToLower(title)
 
-	movies, err := s.repo.FindAllMovies(true, title)
+	offset := (page - 1) * limit
+
+	movies, err := s.repo.FindAllMovies(true, title, limit, offset)
 	if err != nil {
 		return []m.MovieDto{}, err
 	}

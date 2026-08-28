@@ -24,6 +24,13 @@ type ActorWithoutMoviesDto struct {
 	Movies    []MovieWithoutActorsDto `json:"movies"`
 }
 
+type ActorsPaginated struct {
+	Actors     []ActorWithoutMoviesDto `json:"actors"`
+	Page       int                     `json:"page"`
+	PageSize   int                     `json:"pageSize"`
+	TotalPages int                     `json:"totalPages"`
+}
+
 func (m ActorDto) Validate() (bool, error) {
 	minDate := time.Date(
 		1895, 12, 28,
