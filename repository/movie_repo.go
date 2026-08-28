@@ -1008,9 +1008,9 @@ func (r movieRepository) CountMovies(ctx context.Context) (int, error) {
 	var count int
 
 	query := `
-			SELECT COUNT(*)
-			FROM movies
-		`
+		SELECT COUNT(*)
+		FROM movies
+	`
 
 	err := r.db.QueryRowContext(ctx, query).Scan(&count)
 	if err != nil {
