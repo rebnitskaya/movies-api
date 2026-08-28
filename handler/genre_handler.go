@@ -3,20 +3,21 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"movies_api/middleware"
+	"movies_api/helper"
 	m "movies_api/models"
 	"net/http"
 	"strconv"
 )
 
 func (h *GenreHandler) GetAllGenres(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
 
-	page, limit, err := middleware.GetPaginationParams(r)
+	page, limit, err := helper.GetPaginationParams(r)
 	if err != nil {
 		return fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
 	}
 
-	genres, err := h.service.GetAllGenres(page, limit)
+	genres, err := h.service.GetAllGenres(page, limit, ctx)
 	if err != nil {
 		return err
 	}
@@ -26,13 +27,15 @@ func (h *GenreHandler) GetAllGenres(w http.ResponseWriter, r *http.Request) erro
 }
 
 func (h *GenreHandler) GetGenre(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
 		return fmt.Errorf("%w: invalid genre id", m.ErrInvalidInput)
 	}
 
-	genre, err := h.service.GetGenre(idInt)
+	genre, err := h.service.GetGenre(idInt, ctx)
 	if err != nil {
 		return err
 	}
@@ -42,13 +45,15 @@ func (h *GenreHandler) GetGenre(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *GenreHandler) PostGenre(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	var genre m.Genre
 	err := json.NewDecoder(r.Body).Decode(&genre)
 	if err != nil {
 		return fmt.Errorf("%w: invalid request body", m.ErrBadRequest)
 	}
 
-	createdGenre, err := h.service.CreateGenre(genre.Name)
+	createdGenre, err := h.service.CreateGenre(genre.Name, ctx)
 	if err != nil {
 		return err
 	}
@@ -60,6 +65,8 @@ func (h *GenreHandler) PostGenre(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *GenreHandler) PatchGenre(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -73,7 +80,7 @@ func (h *GenreHandler) PatchGenre(w http.ResponseWriter, r *http.Request) error 
 		return fmt.Errorf("%w: invalid request body", m.ErrBadRequest)
 	}
 
-	genre, err := h.service.PatchGenre(idInt, genreData.Name)
+	genre, err := h.service.PatchGenre(idInt, genreData.Name, ctx)
 	if err != nil {
 		return err
 	}
@@ -83,6 +90,8 @@ func (h *GenreHandler) PatchGenre(w http.ResponseWriter, r *http.Request) error 
 }
 
 func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	id := r.PathValue("id")
 	idInt, err := strconv.Atoi(id)
 	if err != nil {
@@ -91,7 +100,7 @@ func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) error
 
 	force := r.URL.Query().Get("force") == "true"
 
-	_, err = h.service.DeleteGenre(idInt, force)
+	_, err = h.service.DeleteGenre(idInt, force, ctx)
 	if err != nil {
 		return err
 	}
@@ -102,6 +111,8 @@ func (h *GenreHandler) DeleteGenre(w http.ResponseWriter, r *http.Request) error
 }
 
 func (h *MovieHandler) PostGenreToMovie(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	movieID, err := strconv.Atoi(r.PathValue("movieID"))
 	if err != nil {
 		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
@@ -111,7 +122,7 @@ func (h *MovieHandler) PostGenreToMovie(w http.ResponseWriter, r *http.Request) 
 		return fmt.Errorf("%w: invalid genre id", m.ErrInvalidInput)
 	}
 
-	movie, err := h.service.AddGenreToMovie(movieID, genreID)
+	movie, err := h.service.AddGenreToMovie(movieID, genreID, ctx)
 	if err != nil {
 		return err
 	}
@@ -123,6 +134,8 @@ func (h *MovieHandler) PostGenreToMovie(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *MovieHandler) DeleteGenreFromMovie(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	movieID, err := strconv.Atoi(r.PathValue("movieID"))
 	if err != nil {
 		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
@@ -132,7 +145,7 @@ func (h *MovieHandler) DeleteGenreFromMovie(w http.ResponseWriter, r *http.Reque
 		return fmt.Errorf("%w: invalid genre id", m.ErrInvalidInput)
 	}
 
-	movie, err := h.service.DeleteGenreFromMovie(movieID, genreID)
+	movie, err := h.service.DeleteGenreFromMovie(movieID, genreID, ctx)
 	if err != nil {
 		return err
 	}

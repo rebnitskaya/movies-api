@@ -1,13 +1,14 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
 	m "movies_api/models"
 )
 
-func (r genreRepository) FindAllGenres(limit, offset int) ([]m.Genre, error) {
+func (r genreRepository) FindAllGenres(limit, offset int, ctx context.Context) ([]m.Genre, error) {
 	query := `
 		SELECT g.id, g.name, m.id, m.title, m.release_year, m.duration
 		FROM (
@@ -21,7 +22,7 @@ func (r genreRepository) FindAllGenres(limit, offset int) ([]m.Genre, error) {
 		ORDER by g.id
 	`
 
-	rows, err := r.db.Query(query, limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -83,13 +84,13 @@ func (r genreRepository) FindAllGenres(limit, offset int) ([]m.Genre, error) {
 	return genres, nil
 }
 
-func (r genreRepository) CreateGenre(genre m.Genre) (m.Genre, error) {
+func (r genreRepository) CreateGenre(genre m.Genre, ctx context.Context) (m.Genre, error) {
 	query := `
 		INSERT INTO genres (name)
 		VALUES (?)
 		RETURNING id, name
 	`
-	err := r.db.QueryRow(query, genre.Name).Scan(
+	err := r.db.QueryRowContext(ctx, query, genre.Name).Scan(
 		&genre.Id,
 		&genre.Name,
 	)
@@ -102,7 +103,7 @@ func (r genreRepository) CreateGenre(genre m.Genre) (m.Genre, error) {
 
 }
 
-func (r genreRepository) FindGenreByID(id int) (m.Genre, error) {
+func (r genreRepository) FindGenreByID(id int, ctx context.Context) (m.Genre, error) {
 	query := `
 	SELECT g.id, g.name, m.id, m.title, m.release_year, m.duration
 		FROM genres g
@@ -110,7 +111,7 @@ func (r genreRepository) FindGenreByID(id int) (m.Genre, error) {
 		LEFT JOIN movies m ON mg.movie_id = m.id
 		WHERE g.id = ?
 	`
-	rows, err := r.db.Query(query, id)
+	rows, err := r.db.QueryContext(ctx, query, id)
 	if err != nil {
 		return m.Genre{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -160,7 +161,7 @@ func (r genreRepository) FindGenreByID(id int) (m.Genre, error) {
 
 }
 
-func (r genreRepository) ReplaceFieldsInGenre(id int, name string) (m.Genre, error) {
+func (r genreRepository) ReplaceFieldsInGenre(id int, name string, ctx context.Context) (m.Genre, error) {
 	query := `
 		UPDATE genres
 		SET name = ?
@@ -169,7 +170,7 @@ func (r genreRepository) ReplaceFieldsInGenre(id int, name string) (m.Genre, err
 	`
 	var genre m.Genre
 
-	err := r.db.QueryRow(query, name, id).Scan(
+	err := r.db.QueryRowContext(ctx, query, name, id).Scan(
 		&genre.Id,
 		&genre.Name,
 	)
@@ -184,12 +185,12 @@ func (r genreRepository) ReplaceFieldsInGenre(id int, name string) (m.Genre, err
 	return genre, nil
 }
 
-func (r genreRepository) DeleteGenreByID(id int) (bool, error) {
+func (r genreRepository) DeleteGenreByID(id int, ctx context.Context) (bool, error) {
 	query := `
 		DELETE FROM genres
 		WHERE id = ?
 	`
-	result, err := r.db.Exec(query, id)
+	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return false, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -204,7 +205,7 @@ func (r genreRepository) DeleteGenreByID(id int) (bool, error) {
 	return true, nil
 }
 
-func (r genreRepository) FindGenreByName(name string) (m.Genre, error) {
+func (r genreRepository) FindGenreByName(name string, ctx context.Context) (m.Genre, error) {
 	query := `
 		SELECT id, name
 		FROM genres
@@ -213,7 +214,7 @@ func (r genreRepository) FindGenreByName(name string) (m.Genre, error) {
 
 	var genre m.Genre
 
-	err := r.db.QueryRow(query, name).Scan(
+	err := r.db.QueryRowContext(ctx, query, name).Scan(
 		&genre.Id,
 		&genre.Name,
 	)
@@ -228,7 +229,7 @@ func (r genreRepository) FindGenreByName(name string) (m.Genre, error) {
 	return genre, nil
 }
 
-func (r genreRepository) CountGenres() (int, error) {
+func (r genreRepository) CountGenres(ctx context.Context) (int, error) {
 	var count int
 
 	query := `
@@ -236,7 +237,7 @@ func (r genreRepository) CountGenres() (int, error) {
 			FROM genres
 		`
 
-	err := r.db.QueryRow(query).Scan(&count)
+	err := r.db.QueryRowContext(ctx, query).Scan(&count)
 	if err != nil {
 		return 0, err
 	}

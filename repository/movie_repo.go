@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -9,8 +10,8 @@ import (
 	"strings"
 )
 
-func (r movieRepository) FindAllMovies(isSearch bool, title string, limit, offset int) ([]models.MovieDto, error) {
-	movies, err := r.findMovies(isSearch, title, limit, offset)
+func (r movieRepository) FindAllMovies(isSearch bool, title string, limit, offset int, ctx context.Context) ([]models.MovieDto, error) {
+	movies, err := r.findMovies(isSearch, title, limit, offset, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -21,12 +22,12 @@ func (r movieRepository) FindAllMovies(isSearch bool, title string, limit, offse
 		movieIDs = append(movieIDs, id)
 	}
 
-	actors, err := r.findActorsForMovies(movieIDs)
+	actors, err := r.findActorsForMovies(movieIDs, ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	genres, err := r.findGenresForMovies(movieIDs)
+	genres, err := r.findGenresForMovies(movieIDs, ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +46,7 @@ func (r movieRepository) FindAllMovies(isSearch bool, title string, limit, offse
 	return result, nil
 }
 
-func (r movieRepository) findMovies(isSearch bool, title string, limit, offset int) (map[int]*models.MovieDto, error) {
+func (r movieRepository) findMovies(isSearch bool, title string, limit, offset int, ctx context.Context) (map[int]*models.MovieDto, error) {
 	query := `
 		SELECT id, title, release_year, duration
 		FROM movies
@@ -65,7 +66,7 @@ func (r movieRepository) findMovies(isSearch bool, title string, limit, offset i
 
 	args = append(args, limit, offset)
 
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -96,7 +97,7 @@ func (r movieRepository) findMovies(isSearch bool, title string, limit, offset i
 	return moviesMap, nil
 }
 
-func (r movieRepository) findActorsForMovies(movieIDs []int) (map[int][]models.ActorInFilmDto, error) {
+func (r movieRepository) findActorsForMovies(movieIDs []int, ctx context.Context) (map[int][]models.ActorInFilmDto, error) {
 	if len(movieIDs) == 0 {
 		return nil, nil
 	}
@@ -121,7 +122,7 @@ func (r movieRepository) findActorsForMovies(movieIDs []int) (map[int][]models.A
 		ORDER BY ma.movie_id, a.id
 	`, strings.Join(placeholders, ","))
 
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -156,7 +157,7 @@ func (r movieRepository) findActorsForMovies(movieIDs []int) (map[int][]models.A
 	return actorsMap, nil
 }
 
-func (r movieRepository) findGenresForMovies(movieIDs []int) (map[int][]models.GenreWithoutMovies, error) {
+func (r movieRepository) findGenresForMovies(movieIDs []int, ctx context.Context) (map[int][]models.GenreWithoutMovies, error) {
 	if len(movieIDs) == 0 {
 		return make(map[int][]models.GenreWithoutMovies), nil
 	}
@@ -180,7 +181,7 @@ func (r movieRepository) findGenresForMovies(movieIDs []int) (map[int][]models.G
 		ORDER BY gm.movie_id, g.id
 	`, strings.Join(placeholders, ","))
 
-	rows, err := r.db.Query(query, args...)
+	rows, err := r.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -211,7 +212,7 @@ func (r movieRepository) findGenresForMovies(movieIDs []int) (map[int][]models.G
 	return genresMap, nil
 }
 
-func (r movieRepository) CreateMovie(movieData models.CreateMovieDto) (models.Movie, error) {
+func (r movieRepository) CreateMovie(movieData models.CreateMovieDto, ctx context.Context) (models.Movie, error) {
 	tx, err := r.db.Begin()
 	if err != nil {
 		return models.Movie{}, fmt.Errorf("%w: failed to start transaction: %w", m.ErrInternalIssue, err)
@@ -226,8 +227,8 @@ func (r movieRepository) CreateMovie(movieData models.CreateMovieDto) (models.Mo
 	`
 
 	var movie models.Movie
-	err = tx.QueryRow(
-		query, movieData.Title, movieData.ReleaseYear, movieData.Duration,
+	err = tx.QueryRowContext(
+		ctx, query, movieData.Title, movieData.ReleaseYear, movieData.Duration,
 	).Scan(
 		&movie.Id,
 		&movie.Title,
@@ -247,11 +248,11 @@ func (r movieRepository) CreateMovie(movieData models.CreateMovieDto) (models.Mo
 
 	if movieData.Actors != nil {
 		for _, actorID := range movieData.Actors {
-			if err := r.actorExists(tx, actorID); err != nil {
+			if err := r.actorExists(tx, actorID, ctx); err != nil {
 				return models.Movie{}, err
 			}
 
-			_, err = tx.Exec(actorQuery, movie.Id, actorID)
+			_, err = tx.ExecContext(ctx, actorQuery, movie.Id, actorID)
 			if err != nil {
 				return models.Movie{}, fmt.Errorf("%w: failed to add actor %d to movie: %w", m.ErrInternalIssue, actorID, err)
 			}
@@ -265,11 +266,11 @@ func (r movieRepository) CreateMovie(movieData models.CreateMovieDto) (models.Mo
 	`
 	if movieData.Genres != nil {
 		for _, genreID := range movieData.Genres {
-			if err := r.genreExists(tx, genreID); err != nil {
+			if err := r.genreExists(tx, genreID, ctx); err != nil {
 				return models.Movie{}, err
 			}
 
-			_, err = tx.Exec(genreQuery, movie.Id, genreID)
+			_, err = tx.ExecContext(ctx, genreQuery, movie.Id, genreID)
 			if err != nil {
 				return models.Movie{}, fmt.Errorf("%w: failed to add genre %d to movie: %w", m.ErrInternalIssue, genreID, err)
 			}
@@ -284,7 +285,7 @@ func (r movieRepository) CreateMovie(movieData models.CreateMovieDto) (models.Mo
 	return movie, nil
 }
 
-func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
+func (r movieRepository) FindMovieByID(movieID int, ctx context.Context) (models.MovieDto, error) {
 	query := `
 		SELECT m.id, m.title, m.release_year, m.duration, a.id, a.name, a.birth_date
 		FROM movies m
@@ -340,7 +341,7 @@ func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
 		return m.MovieDto{}, m.ErrMovieNotFound
 	}
 
-	moviesGenresMap, err := r.findGenresForMovies([]int{movie.Id})
+	moviesGenresMap, err := r.findGenresForMovies([]int{movie.Id}, ctx)
 	if err != nil {
 		return m.MovieDto{}, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
 	}
@@ -355,7 +356,7 @@ func (r movieRepository) FindMovieByID(movieID int) (models.MovieDto, error) {
 	return movie, nil
 }
 
-func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[string]any) (models.Movie, error) {
+func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[string]any, ctx context.Context) (models.Movie, error) {
 	alowedToChange := map[string]bool{
 		"title":        true,
 		"release_year": true,
@@ -385,7 +386,7 @@ func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[st
 	args = append(args, movieID)
 
 	var movie m.Movie
-	err := r.db.QueryRow(query, args...).Scan(
+	err := r.db.QueryRowContext(ctx, query, args...).Scan(
 		&movie.Id,
 		&movie.Title,
 		&movie.ReleaseYear,
@@ -403,13 +404,13 @@ func (r movieRepository) ReplaceFieldsInMovie(movieID int, filedsToUpdate map[st
 	return movie, nil
 }
 
-func (r movieRepository) DeleteMovieByID(movieID int) (bool, error) {
+func (r movieRepository) DeleteMovieByID(movieID int, ctx context.Context) (bool, error) {
 	query := `
 		DELETE FROM movies
 		WHERE id = ?
 	`
 
-	res, err := r.db.Exec(query, movieID)
+	res, err := r.db.ExecContext(ctx, query, movieID)
 	if err != nil {
 		return false, fmt.Errorf("%w: something happened during movie deletion: %w", m.ErrInternalIssue, err)
 	}
@@ -426,7 +427,7 @@ func (r movieRepository) DeleteMovieByID(movieID int) (bool, error) {
 	return true, nil
 }
 
-func (r movieRepository) FindMoviesByGenre(genreID, limit, offset int) ([]models.MovieDto, error) {
+func (r movieRepository) FindMoviesByGenre(genreID, limit, offset int, ctx context.Context) ([]models.MovieDto, error) {
 	query := `
 		SELECT m.id, m.title, m.release_year, m.duration, g.id, g.name
 		FROM movies m
@@ -441,7 +442,7 @@ func (r movieRepository) FindMoviesByGenre(genreID, limit, offset int) ([]models
 		)
 	`
 
-	rows, err := r.db.Query(query, genreID, limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, genreID, limit, offset)
 	if err != nil {
 		return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -505,7 +506,7 @@ func (r movieRepository) FindMoviesByGenre(genreID, limit, offset int) ([]models
 		return nil, m.ErrMovieNotFound
 	}
 
-	moviesActorsMap, err := r.findActorsForMovies(moviesIDs)
+	moviesActorsMap, err := r.findActorsForMovies(moviesIDs, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
 	}
@@ -519,7 +520,7 @@ func (r movieRepository) FindMoviesByGenre(genreID, limit, offset int) ([]models
 	return movies, nil
 }
 
-func (r movieRepository) FindMoviesByYear(year, limit, offset int) ([]models.MovieDto, error) {
+func (r movieRepository) FindMoviesByYear(year, limit, offset int, ctx context.Context) ([]models.MovieDto, error) {
 	query := `
 		SELECT m.id, m.title, m.release_year, m.duration, g.id, g.name
 		FROM movies m
@@ -536,7 +537,7 @@ func (r movieRepository) FindMoviesByYear(year, limit, offset int) ([]models.Mov
 
 	moviesMap := make(map[int]*models.MovieDto)
 	movieIDs := []int{}
-	rows, err := r.db.Query(query, year, limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, year, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -596,7 +597,7 @@ func (r movieRepository) FindMoviesByYear(year, limit, offset int) ([]models.Mov
 		return nil, m.ErrMovieNotFound
 	}
 
-	moviesActorsMap, err := r.findActorsForMovies(movieIDs)
+	moviesActorsMap, err := r.findActorsForMovies(movieIDs, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
 	}
@@ -610,7 +611,7 @@ func (r movieRepository) FindMoviesByYear(year, limit, offset int) ([]models.Mov
 	return movies, nil
 }
 
-func (r movieRepository) FindMoviesWithActor(actorID, limit, offset int) ([]models.MovieDto, error) {
+func (r movieRepository) FindMoviesWithActor(actorID, limit, offset int, ctx context.Context) ([]models.MovieDto, error) {
 	query := `
 		SELECT m.id, m.title, m.release_year, m.duration, a.id, a.name, a.birth_date
 		FROM movies m
@@ -625,7 +626,7 @@ func (r movieRepository) FindMoviesWithActor(actorID, limit, offset int) ([]mode
 		)
 	`
 
-	rows, err := r.db.Query(query, actorID, limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, actorID, limit, offset)
 	if err != nil {
 		return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -691,7 +692,7 @@ func (r movieRepository) FindMoviesWithActor(actorID, limit, offset int) ([]mode
 		return nil, m.ErrMovieNotFound
 	}
 
-	moviesGenresMap, err := r.findGenresForMovies(movieIDs)
+	moviesGenresMap, err := r.findGenresForMovies(movieIDs, ctx)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", m.ErrInternalIssue, err)
 	}
@@ -705,7 +706,7 @@ func (r movieRepository) FindMoviesWithActor(actorID, limit, offset int) ([]mode
 	return movies, nil
 }
 
-func (r movieRepository) FindAllActorsInMovie(movieID int) ([]models.ActorInFilmDto, error) {
+func (r movieRepository) FindAllActorsInMovie(movieID int, ctx context.Context) ([]models.ActorInFilmDto, error) {
 	query := `
 		SELECT a.id, a.name, a.birth_date
 		FROM movie_actors ma
@@ -713,7 +714,7 @@ func (r movieRepository) FindAllActorsInMovie(movieID int) ([]models.ActorInFilm
 		WHERE ma.movie_id = ?
 	`
 
-	rows, err := r.db.Query(query, movieID)
+	rows, err := r.db.QueryContext(ctx, query, movieID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -748,13 +749,13 @@ func (r movieRepository) FindAllActorsInMovie(movieID int) ([]models.ActorInFilm
 	return actors, nil
 }
 
-func (r movieRepository) FindMovieByTitleAndYear(title string, year int) (models.Movie, error) {
+func (r movieRepository) FindMovieByTitleAndYear(title string, year int, ctx context.Context) (models.Movie, error) {
 	query := `
 		SELECT id, title, release_year, duration
 		FROM movies
 		WHERE title = ? AND release_year = ?
 	`
-	rows, err := r.db.Query(query, title, year)
+	rows, err := r.db.QueryContext(ctx, query, title, year)
 	if err != nil {
 		return m.Movie{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -789,7 +790,7 @@ func (r movieRepository) FindMovieByTitleAndYear(title string, year int) (models
 	return movie, nil
 }
 
-func (r movieRepository) AddActorToMovie(movieID, actorID int) error {
+func (r movieRepository) AddActorToMovie(movieID, actorID int, ctx context.Context) error {
 	query := `
 		INSERT INTO movie_actors (movie_id, actor_id)
 		VALUES (?, ?)
@@ -805,7 +806,7 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int) error {
 
 	var id int
 
-	err := r.db.QueryRow(checkActor, actorID).Scan(&id)
+	err := r.db.QueryRowContext(ctx, checkActor, actorID).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("%w: actor with id %d doesn't exist, can't add it to movie.", m.ErrActorNotFound, actorID)
@@ -814,7 +815,7 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int) error {
 		return fmt.Errorf("%w: failed to check genre: %w", m.ErrInternalIssue, err)
 	}
 
-	err = r.db.QueryRow(checkMovie, movieID).Scan(&id)
+	err = r.db.QueryRowContext(ctx, checkMovie, movieID).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("%w: movie with id %d doesn't exist, can't add a genre to it.", m.ErrMovieNotFound, movieID)
@@ -823,7 +824,7 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int) error {
 		return fmt.Errorf("%w: failed to check movie: %w", m.ErrInternalIssue, err)
 	}
 
-	_, err = r.db.Exec(query, movieID, actorID)
+	_, err = r.db.ExecContext(ctx, query, movieID, actorID)
 	if err != nil {
 		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -831,7 +832,7 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int) error {
 	return nil
 }
 
-func (r movieRepository) AddGenreToMovie(movieID, genreID int) error {
+func (r movieRepository) AddGenreToMovie(movieID, genreID int, ctx context.Context) error {
 	query := `
 		INSERT INTO genres_movies (movie_id, genre_id)
 		VALUES (?, ?)
@@ -847,7 +848,7 @@ func (r movieRepository) AddGenreToMovie(movieID, genreID int) error {
 
 	var id int
 
-	err := r.db.QueryRow(checkGenre, genreID).Scan(&id)
+	err := r.db.QueryRowContext(ctx, checkGenre, genreID).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("%w: genre with id %d doesn't exist, can't add it to movie.", m.ErrGenreNotFound, genreID)
@@ -856,7 +857,7 @@ func (r movieRepository) AddGenreToMovie(movieID, genreID int) error {
 		return fmt.Errorf("%w: failed to check genre: %w", m.ErrInternalIssue, err)
 	}
 
-	err = r.db.QueryRow(checkMovie, movieID).Scan(&id)
+	err = r.db.QueryRowContext(ctx, checkMovie, movieID).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("%w: movie with id %d doesn't exist, can't add a genre to it.", m.ErrMovieNotFound, movieID)
@@ -865,7 +866,7 @@ func (r movieRepository) AddGenreToMovie(movieID, genreID int) error {
 		return fmt.Errorf("%w: failed to check movie: %w", m.ErrInternalIssue, err)
 	}
 
-	_, err = r.db.Exec(query, movieID, genreID)
+	_, err = r.db.ExecContext(ctx, query, movieID, genreID)
 	if err != nil {
 		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -873,7 +874,7 @@ func (r movieRepository) AddGenreToMovie(movieID, genreID int) error {
 	return nil
 }
 
-func (r movieRepository) FindGenresInMovie(MovieID int) ([]m.GenreWithoutMovies, error) {
+func (r movieRepository) FindGenresInMovie(movieID int, ctx context.Context) ([]m.GenreWithoutMovies, error) {
 	query := `
 		SELECT g.id, g.name
 	 	FROM genres g
@@ -881,7 +882,7 @@ func (r movieRepository) FindGenresInMovie(MovieID int) ([]m.GenreWithoutMovies,
 		WHERE gm.movie_id = ?
 	`
 
-	rows, err := r.db.Query(query, MovieID)
+	rows, err := r.db.QueryContext(ctx, query, movieID)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -916,13 +917,13 @@ func (r movieRepository) FindGenresInMovie(MovieID int) ([]m.GenreWithoutMovies,
 	return genres, nil
 }
 
-func (r movieRepository) RemoveActorFromMovie(movieID, actorID int) error {
+func (r movieRepository) RemoveActorFromMovie(movieID, actorID int, ctx context.Context) error {
 	query := `
 		DELETE FROM movie_actors
 		WHERE movie_id = ? AND actor_id = ?
 	`
 
-	res, err := r.db.Exec(query, movieID, actorID)
+	res, err := r.db.ExecContext(ctx, query, movieID, actorID)
 	if err != nil {
 		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -939,13 +940,13 @@ func (r movieRepository) RemoveActorFromMovie(movieID, actorID int) error {
 	return nil
 }
 
-func (r movieRepository) RemoveGenreFromMovie(movieID, genreID int) error {
+func (r movieRepository) RemoveGenreFromMovie(movieID, genreID int, ctx context.Context) error {
 	query := `
 		DELETE FROM genres_movies
 		WHERE movie_id = ? AND genre_id = ?
 	`
 
-	res, err := r.db.Exec(query, movieID, genreID)
+	res, err := r.db.ExecContext(ctx, query, movieID, genreID)
 	if err != nil {
 		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -962,10 +963,11 @@ func (r movieRepository) RemoveGenreFromMovie(movieID, genreID int) error {
 	return nil
 }
 
-func (r movieRepository) actorExists(tx *sql.Tx, actorID int) error {
+func (r movieRepository) actorExists(tx *sql.Tx, actorID int, ctx context.Context) error {
 	var id int
 
-	err := tx.QueryRow(
+	err := tx.QueryRowContext(
+		ctx,
 		`SELECT id FROM actors WHERE id = ?`,
 		actorID,
 	).Scan(&id)
@@ -982,10 +984,11 @@ func (r movieRepository) actorExists(tx *sql.Tx, actorID int) error {
 	return nil
 }
 
-func (r movieRepository) genreExists(tx *sql.Tx, genreID int) error {
+func (r movieRepository) genreExists(tx *sql.Tx, genreID int, ctx context.Context) error {
 	var id int
 
-	err := tx.QueryRow(
+	err := tx.QueryRowContext(
+		ctx,
 		`SELECT id FROM genres WHERE id = ?`,
 		genreID,
 	).Scan(&id)
@@ -1001,15 +1004,15 @@ func (r movieRepository) genreExists(tx *sql.Tx, genreID int) error {
 	return nil
 }
 
-func (r movieRepository) CountMovies() (int, error) {
+func (r movieRepository) CountMovies(ctx context.Context) (int, error) {
 	var count int
 
 	query := `
-			SELECT COUNT(*)
-			FROM movies
-		`
+		SELECT COUNT(*)
+		FROM movies
+	`
 
-	err := r.db.QueryRow(query).Scan(&count)
+	err := r.db.QueryRowContext(ctx, query).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -1017,7 +1020,7 @@ func (r movieRepository) CountMovies() (int, error) {
 	return count, nil
 }
 
-func (r movieRepository) CountMoviesByGenre(genreID int) (int, error) {
+func (r movieRepository) CountMoviesByGenre(genreID int, ctx context.Context) (int, error) {
 	var count int
 
 	query := `
@@ -1026,7 +1029,7 @@ func (r movieRepository) CountMoviesByGenre(genreID int) (int, error) {
 		WHERE genre_id = ?
 	`
 
-	err := r.db.QueryRow(query, genreID).Scan(&count)
+	err := r.db.QueryRowContext(ctx, query, genreID).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -1034,7 +1037,7 @@ func (r movieRepository) CountMoviesByGenre(genreID int) (int, error) {
 	return count, nil
 }
 
-func (r movieRepository) CountMoviesByYear(year int) (int, error) {
+func (r movieRepository) CountMoviesByYear(year int, ctx context.Context) (int, error) {
 	var count int
 
 	query := `
@@ -1043,7 +1046,7 @@ func (r movieRepository) CountMoviesByYear(year int) (int, error) {
 		WHERE release_year = ?
 	`
 
-	err := r.db.QueryRow(query, year).Scan(&count)
+	err := r.db.QueryRowContext(ctx, query, year).Scan(&count)
 	if err != nil {
 		return 0, err
 	}
@@ -1051,7 +1054,7 @@ func (r movieRepository) CountMoviesByYear(year int) (int, error) {
 	return count, nil
 }
 
-func (r movieRepository) CountMoviesByActor(actorID int) (int, error) {
+func (r movieRepository) CountMoviesByActor(actorID int, ctx context.Context) (int, error) {
 	var count int
 
 	query := `
@@ -1060,7 +1063,7 @@ func (r movieRepository) CountMoviesByActor(actorID int) (int, error) {
 		WHERE actor_id = ?
 	`
 
-	err := r.db.QueryRow(query, actorID).Scan(&count)
+	err := r.db.QueryRowContext(ctx, query, actorID).Scan(&count)
 	if err != nil {
 		return 0, err
 	}

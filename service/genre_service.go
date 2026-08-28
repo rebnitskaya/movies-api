@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	m "movies_api/models"
@@ -12,10 +13,10 @@ type GenreService struct {
 	repo r.GenreRepository
 }
 
-func (s *GenreService) GetAllGenres(page, limit int) (m.GenresPaginated, error) {
+func (s *GenreService) GetAllGenres(page, limit int, ctx context.Context) (m.GenresPaginated, error) {
 	offset := (page - 1) * limit
 
-	genres, err := s.repo.FindAllGenres(limit, offset)
+	genres, err := s.repo.FindAllGenres(limit, offset, ctx)
 	if err != nil {
 		return m.GenresPaginated{}, err
 	}
@@ -40,7 +41,7 @@ func (s *GenreService) GetAllGenres(page, limit int) (m.GenresPaginated, error) 
 	}
 
 	pageSize := len(result)
-	totalGenres, err := s.repo.CountGenres()
+	totalGenres, err := s.repo.CountGenres(ctx)
 	if err != nil {
 		return m.GenresPaginated{}, err
 	}
@@ -60,12 +61,12 @@ func (s *GenreService) GetAllGenres(page, limit int) (m.GenresPaginated, error) 
 	}, nil
 }
 
-func (s *GenreService) GetGenre(id int) (m.GenreDto, error) {
+func (s *GenreService) GetGenre(id int, ctx context.Context) (m.GenreDto, error) {
 	if id <= 0 {
 		return m.GenreDto{}, fmt.Errorf("%w: invalid genre id.", m.ErrBadRequest)
 	}
 
-	genre, err := s.repo.FindGenreByID(id)
+	genre, err := s.repo.FindGenreByID(id, ctx)
 	if err != nil {
 		return m.GenreDto{}, err
 	}
@@ -84,18 +85,18 @@ func (s *GenreService) GetGenre(id int) (m.GenreDto, error) {
 	return genreDTO, nil
 }
 
-func (s *GenreService) CreateGenre(name string) (m.Genre, error) {
+func (s *GenreService) CreateGenre(name string, ctx context.Context) (m.Genre, error) {
 	if name == "" {
 		return m.Genre{}, fmt.Errorf("%w: genre name cannot be empty", m.ErrBadRequest)
 	}
 
-	_, err := s.repo.FindGenreByName(name)
+	_, err := s.repo.FindGenreByName(name, ctx)
 	if err == nil {
 		return m.Genre{}, fmt.Errorf("%w: genre already exists", m.ErrBadRequest)
 	}
 
 	genre := m.Genre{Name: name}
-	createdGenre, err := s.repo.CreateGenre(genre)
+	createdGenre, err := s.repo.CreateGenre(genre, ctx)
 	if err != nil {
 		return m.Genre{}, err
 	}
@@ -103,7 +104,7 @@ func (s *GenreService) CreateGenre(name string) (m.Genre, error) {
 	return createdGenre, nil
 }
 
-func (s *GenreService) PatchGenre(id int, name string) (m.Genre, error) {
+func (s *GenreService) PatchGenre(id int, name string, ctx context.Context) (m.Genre, error) {
 	if name == "" {
 		return m.Genre{}, fmt.Errorf("%w: genre name cannot be empty", m.ErrBadRequest)
 	}
@@ -112,19 +113,19 @@ func (s *GenreService) PatchGenre(id int, name string) (m.Genre, error) {
 		return m.Genre{}, fmt.Errorf("%w: invalid genre id.", m.ErrBadRequest)
 	}
 
-	genre, err := s.repo.ReplaceFieldsInGenre(id, name)
+	genre, err := s.repo.ReplaceFieldsInGenre(id, name, ctx)
 	if err != nil {
 		return m.Genre{}, err
 	}
 	return genre, nil
 }
 
-func (s *GenreService) DeleteGenre(id int, force bool) (bool, error) {
+func (s *GenreService) DeleteGenre(id int, force bool, ctx context.Context) (bool, error) {
 	if id <= 0 {
 		return false, fmt.Errorf("%w: invalid genre id.", m.ErrBadRequest)
 	}
 
-	genre, err := s.repo.FindGenreByID(id)
+	genre, err := s.repo.FindGenreByID(id, ctx)
 	if err != nil {
 		return false, err
 	}
@@ -137,7 +138,7 @@ func (s *GenreService) DeleteGenre(id int, force bool) (bool, error) {
 		)
 	}
 
-	_, err = s.repo.DeleteGenreByID(id)
+	_, err = s.repo.DeleteGenreByID(id, ctx)
 	if err != nil {
 		return false, err
 	}
@@ -145,7 +146,7 @@ func (s *GenreService) DeleteGenre(id int, force bool) (bool, error) {
 	return true, nil
 }
 
-func (s *MovieService) AddGenreToMovie(movieID, genreID int) (m.MovieDto, error) {
+func (s *MovieService) AddGenreToMovie(movieID, genreID int, ctx context.Context) (m.MovieDto, error) {
 	if movieID <= 0 {
 		return m.MovieDto{}, fmt.Errorf("%w: invalid movie id.", m.ErrBadRequest)
 	}
@@ -154,17 +155,17 @@ func (s *MovieService) AddGenreToMovie(movieID, genreID int) (m.MovieDto, error)
 		return m.MovieDto{}, fmt.Errorf("%w: invalid genre id.", m.ErrBadRequest)
 	}
 
-	err := s.repo.AddGenreToMovie(movieID, genreID)
+	err := s.repo.AddGenreToMovie(movieID, genreID, ctx)
 	if err != nil {
 		return m.MovieDto{}, err
 	}
 
-	movie, err := s.repo.FindMovieByID(movieID)
+	movie, err := s.repo.FindMovieByID(movieID, ctx)
 	if err != nil {
 		return m.MovieDto{}, err
 	}
 
-	genres, err := s.repo.FindGenresInMovie(movieID)
+	genres, err := s.repo.FindGenresInMovie(movieID, ctx)
 	if err != nil {
 		return m.MovieDto{}, err
 	}
@@ -174,7 +175,7 @@ func (s *MovieService) AddGenreToMovie(movieID, genreID int) (m.MovieDto, error)
 	return movie, nil
 }
 
-func (s *MovieService) DeleteGenreFromMovie(movieID, genreID int) (m.MovieDto, error) {
+func (s *MovieService) DeleteGenreFromMovie(movieID, genreID int, ctx context.Context) (m.MovieDto, error) {
 	if movieID <= 0 {
 		return m.MovieDto{}, fmt.Errorf("%w invalid movie id.", m.ErrBadRequest)
 	}
@@ -183,17 +184,17 @@ func (s *MovieService) DeleteGenreFromMovie(movieID, genreID int) (m.MovieDto, e
 		return m.MovieDto{}, fmt.Errorf("%w: invalid genre id.", m.ErrBadRequest)
 	}
 
-	movie, err := s.repo.FindMovieByID(movieID)
+	movie, err := s.repo.FindMovieByID(movieID, ctx)
 	if err != nil {
 		return m.MovieDto{}, err
 	}
 
-	err = s.repo.RemoveGenreFromMovie(movieID, genreID)
+	err = s.repo.RemoveGenreFromMovie(movieID, genreID, ctx)
 	if err != nil {
 		return m.MovieDto{}, err
 	}
 
-	genres, err := s.repo.FindGenresInMovie(movieID)
+	genres, err := s.repo.FindGenresInMovie(movieID, ctx)
 	if err != nil {
 		if errors.Is(err, m.ErrGenreNotFound) {
 			movie.Genres = genres
