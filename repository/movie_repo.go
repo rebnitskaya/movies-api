@@ -398,7 +398,7 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 	query := `
 		SELECT m.id, m.title, m.release_year, m.duration, g.id, g.name
 		FROM movies m
-		LEFT JOIN genres_movies ma ON gm.movie_id = m.id
+		LEFT JOIN genres_movies gm ON gm.movie_id = m.id
 		LEFT JOIN genres a ON g.id = gm.genre_id
 		WHERE g.id = ?
 	`
