@@ -27,7 +27,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("%w: invalid genre id", m.ErrInvalidInput)
 		}
 
-		movies, err := h.service.GetAllMoviesWithGenre(genreID)
+		movies, err := h.service.GetAllMoviesWithGenre(genreID, page, limit)
 		if err != nil {
 			return err
 		}
@@ -41,7 +41,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("%w: invalid year format", m.ErrInvalidInput)
 		}
 
-		movies, err := h.service.GetAllMoviesWithYear(year)
+		movies, err := h.service.GetAllMoviesWithYear(year, page, limit)
 		if err != nil {
 			return err
 		}
@@ -55,7 +55,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("%w: invalid actor id", m.ErrInvalidInput)
 		}
 
-		movies, err := h.service.GetAllMoviesWithActor(actorID)
+		movies, err := h.service.GetAllMoviesWithActor(actorID, page, limit)
 		if err != nil {
 			return err
 		}

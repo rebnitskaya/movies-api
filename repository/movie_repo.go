@@ -426,7 +426,7 @@ func (r movieRepository) DeleteMovieByID(movieID int) (bool, error) {
 	return true, nil
 }
 
-func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, error) {
+func (r movieRepository) FindMoviesByGenre(genreID, limit, offset int) ([]models.MovieDto, error) {
 	query := `
 		SELECT m.id, m.title, m.release_year, m.duration, g.id, g.name
 		FROM movies m
@@ -436,10 +436,12 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 		    SELECT movie_id
 		    FROM genres_movies
 		    WHERE genre_id = ?
+			ORDER BY movie_id
+			LIMIT ? OFFSET ?
 		)
 	`
 
-	rows, err := r.db.Query(query, genreID)
+	rows, err := r.db.Query(query, genreID, limit, offset)
 	if err != nil {
 		return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -517,18 +519,24 @@ func (r movieRepository) FindMoviesByGenre(genreID int) ([]models.MovieDto, erro
 	return movies, nil
 }
 
-func (r movieRepository) FindMoviesByYear(year int) ([]models.MovieDto, error) {
+func (r movieRepository) FindMoviesByYear(year, limit, offset int) ([]models.MovieDto, error) {
 	query := `
 		SELECT m.id, m.title, m.release_year, m.duration, g.id, g.name
 		FROM movies m
 		JOIN genres_movies gm ON gm.movie_id = m.id
 		JOIN genres g ON g.id = gm.genre_id
-		WHERE release_year = ?
+		WHERE m.id IN (
+				SELECT id
+				FROM movies
+				WHERE release_year = ?
+				ORDER BY id
+				LIMIT ? OFFSET ?
+			)
 	`
 
 	moviesMap := make(map[int]*models.MovieDto)
 	movieIDs := []int{}
-	rows, err := r.db.Query(query, year)
+	rows, err := r.db.Query(query, year, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -602,7 +610,7 @@ func (r movieRepository) FindMoviesByYear(year int) ([]models.MovieDto, error) {
 	return movies, nil
 }
 
-func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, error) {
+func (r movieRepository) FindMoviesWithActor(actorID, limit, offset int) ([]models.MovieDto, error) {
 	query := `
 		SELECT m.id, m.title, m.release_year, m.duration, a.id, a.name, a.birth_date
 		FROM movies m
@@ -612,10 +620,12 @@ func (r movieRepository) FindMoviesWithActor(actorID int) ([]models.MovieDto, er
 			  SELECT movie_id
 			  FROM movie_actors
 			  WHERE actor_id = ?
+			  ORDER BY movie_id
+			  LIMIT ? OFFSET ?
 		)
 	`
 
-	rows, err := r.db.Query(query, actorID)
+	rows, err := r.db.Query(query, actorID, limit, offset)
 	if err != nil {
 		return []models.MovieDto{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -1000,6 +1010,57 @@ func (r movieRepository) CountMovies() (int, error) {
 		`
 
 	err := r.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (r movieRepository) CountMoviesByGenre(genreID int) (int, error) {
+	var count int
+
+	query := `
+		SELECT COUNT(*)
+		FROM genres_movies
+		WHERE genre_id = ?
+	`
+
+	err := r.db.QueryRow(query, genreID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (r movieRepository) CountMoviesByYear(year int) (int, error) {
+	var count int
+
+	query := `
+		SELECT COUNT(*)
+		FROM movies
+		WHERE release_year = ?
+	`
+
+	err := r.db.QueryRow(query, year).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (r movieRepository) CountMoviesByActor(actorID int) (int, error) {
+	var count int
+
+	query := `
+		SELECT COUNT(*)
+		FROM movie_actors
+		WHERE actor_id = ?
+	`
+
+	err := r.db.QueryRow(query, actorID).Scan(&count)
 	if err != nil {
 		return 0, err
 	}

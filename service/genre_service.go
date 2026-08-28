@@ -46,6 +46,11 @@ func (s *GenreService) GetAllGenres(page, limit int) (m.GenresPaginated, error) 
 	}
 
 	totalPages := (totalGenres + limit - 1) / limit
+	if page > totalPages && totalPages > 0 {
+		return m.GenresPaginated{
+			Genres: []m.GenreDto{},
+		}, nil
+	}
 
 	return m.GenresPaginated{
 		Genres:     result,
@@ -86,7 +91,7 @@ func (s *GenreService) CreateGenre(name string) (m.Genre, error) {
 
 	_, err := s.repo.FindGenreByName(name)
 	if err == nil {
-		return m.Genre{}, err
+		return m.Genre{}, fmt.Errorf("%w: genre already exists", m.ErrBadRequest)
 	}
 
 	genre := m.Genre{Name: name}

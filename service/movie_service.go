@@ -23,12 +23,17 @@ func (s *MovieService) GetAllMovies(page, limit int) (m.MoviesPaginated, error) 
 	sortMovies(movies)
 
 	pageSize := len(movies)
-	totalGenres, err := s.repo.CountMovies()
+	totalMovies, err := s.repo.CountMovies()
 	if err != nil {
 		return m.MoviesPaginated{}, err
 	}
 
-	totalPages := (totalGenres + limit - 1) / limit
+	totalPages := (totalMovies + limit - 1) / limit
+	if page > totalPages && totalPages > 0 {
+		return m.MoviesPaginated{
+			Movies: []m.MovieDto{},
+		}, nil
+	}
 
 	return m.MoviesPaginated{
 		Movies:     movies,
@@ -52,47 +57,102 @@ func (s *MovieService) FindOneMovie(id int) (m.MovieDto, error) {
 	return movie, nil
 }
 
-func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]m.MovieDto, error) {
+func (s *MovieService) GetAllMoviesWithGenre(genreID, page, limit int) (m.MoviesPaginated, error) {
 	if genreID <= 0 {
-		return []m.MovieDto{}, fmt.Errorf("%w: invalid id", m.ErrInvalidInput)
+		return m.MoviesPaginated{}, fmt.Errorf("%w: invalid id", m.ErrInvalidInput)
 	}
-	movies, err := s.repo.FindMoviesByGenre(genreID)
+
+	offset := (page - 1) * limit
+	movies, err := s.repo.FindMoviesByGenre(genreID, limit, offset)
 	if err != nil {
-		return []m.MovieDto{}, err
+		return m.MoviesPaginated{}, err
 	}
 
 	sortMovies(movies)
 
-	return movies, nil
+	totalMovies, err := s.repo.CountMoviesByGenre(genreID)
+
+	if err != nil {
+		return m.MoviesPaginated{}, err
+	}
+	totalPages := (totalMovies + limit - 1) / limit
+	if page > totalPages && totalPages > 0 {
+		return m.MoviesPaginated{
+			Movies: []m.MovieDto{},
+		}, nil
+	}
+	return m.MoviesPaginated{
+		Movies:     movies,
+		Page:       page,
+		PageSize:   len(movies),
+		TotalPages: totalPages,
+	}, nil
+
 }
 
-func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.MovieDto, error) {
+func (s *MovieService) GetAllMoviesWithYear(year, page, limit int) (m.MoviesPaginated, error) {
 	if year < 1885 || year > 2050 || year == 0 {
-		return nil, fmt.Errorf("%w: invalid release year.", m.ErrInvalidInput)
+		return m.MoviesPaginated{}, fmt.Errorf("%w: invalid release year.", m.ErrInvalidInput)
 	}
 
-	movies, err := s.repo.FindMoviesByYear(year)
+	offset := (page - 1) * limit
+	movies, err := s.repo.FindMoviesByYear(year, limit, offset)
 	if err != nil {
-		return nil, err
+		return m.MoviesPaginated{}, err
 	}
 
 	sortMovies(movies)
-	return movies, nil
+	totalMovies, err := s.repo.CountMoviesByYear(year)
+
+	if err != nil {
+		return m.MoviesPaginated{}, err
+	}
+	totalPages := (totalMovies + limit - 1) / limit
+	if page > totalPages && totalPages > 0 {
+		return m.MoviesPaginated{
+			Movies: []m.MovieDto{},
+		}, nil
+	}
+	return m.MoviesPaginated{
+		Movies:     movies,
+		Page:       page,
+		PageSize:   len(movies),
+		TotalPages: totalPages,
+	}, nil
+
 }
 
-func (s *MovieService) GetAllMoviesWithActor(actorID int) ([]m.MovieDto, error) {
+func (s *MovieService) GetAllMoviesWithActor(actorID, page, limit int) (m.MoviesPaginated, error) {
 	if actorID <= 0 {
-		return []m.MovieDto{}, fmt.Errorf("%w: invalid id", m.ErrInvalidInput)
+		return m.MoviesPaginated{}, fmt.Errorf("%w: invalid id", m.ErrInvalidInput)
 	}
 
-	movies, err := s.repo.FindMoviesWithActor(actorID)
+	offset := (page - 1) * limit
+	movies, err := s.repo.FindMoviesWithActor(actorID, limit, offset)
 	if err != nil {
-		return []m.MovieDto{}, err
+		return m.MoviesPaginated{}, err
 	}
 
 	sortMovies(movies)
 
-	return movies, nil
+	totalMovies, err := s.repo.CountMoviesByActor(actorID)
+
+	if err != nil {
+		return m.MoviesPaginated{}, err
+	}
+	totalPages := (totalMovies + limit - 1) / limit
+	if page > totalPages && totalPages > 0 {
+		return m.MoviesPaginated{
+			Movies: []m.MovieDto{},
+		}, nil
+	}
+	return m.MoviesPaginated{
+		Movies:     movies,
+		Page:       page,
+		PageSize:   len(movies),
+		TotalPages: totalPages,
+	}, nil
+
 }
 
 func (s *MovieService) GetAllMoviesWithTitle(title string, page, limit int) ([]m.MovieDto, error) {
