@@ -123,11 +123,9 @@ func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 
-	message := fmt.Sprintf("New movie created. Movie id: %d", movie.Id)
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	return json.NewEncoder(w).Encode(message)
+	return json.NewEncoder(w).Encode(movie)
 }
 
 func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) error {
