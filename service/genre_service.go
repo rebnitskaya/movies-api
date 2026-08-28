@@ -89,7 +89,7 @@ func (s *GenreService) CreateGenre(name string) (m.Genre, error) {
 
 	_, err := s.repo.FindGenreByName(name)
 	if err == nil {
-		return m.Genre{}, err
+		return m.Genre{}, fmt.Errorf("%w: genre already exists", m.ErrBadRequest)
 	}
 
 	genre := m.Genre{Name: name}
