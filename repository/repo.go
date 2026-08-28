@@ -57,7 +57,7 @@ type MovieRepository interface {
 	ReplaceFieldsInMovie(int, map[string]any) (m.Movie, error)
 	DeleteMovieByID(int) (bool, error)
 	FindMoviesByGenre(int) ([]m.MovieDto, error)
-	FindMoviesByYear(int) ([]m.Movie, error)
+	FindMoviesByYear(int) ([]m.MovieDto, error)
 	FindMoviesWithActor(int) ([]m.MovieDto, error)
 	FindAllActorsInMovie(int) ([]m.ActorInFilmDto, error)
 	FindMovieByTitleAndYear(string, int) (m.Movie, error)
