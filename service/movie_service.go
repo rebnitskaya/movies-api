@@ -29,6 +29,9 @@ func (s *MovieService) GetAllMovies(page, limit int) (m.MoviesPaginated, error) 
 	}
 
 	totalPages := (totalGenres + limit - 1) / limit
+	if page > totalPages && totalPages > 0 {
+		return m.MoviesPaginated{}, fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
+	}
 
 	return m.MoviesPaginated{
 		Movies:     movies,

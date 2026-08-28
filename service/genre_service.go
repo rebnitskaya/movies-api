@@ -46,6 +46,9 @@ func (s *GenreService) GetAllGenres(page, limit int) (m.GenresPaginated, error) 
 	}
 
 	totalPages := (totalGenres + limit - 1) / limit
+	if page > totalPages && totalPages > 0 {
+		return m.GenresPaginated{}, fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
+	}
 
 	return m.GenresPaginated{
 		Genres:     result,
