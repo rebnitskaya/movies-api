@@ -55,7 +55,9 @@ func (s *ActorService) GetAllActors(page, limit int) (m.ActorsPaginated, error) 
 	totalPages := (totalActors + limit - 1) / limit
 
 	if page > totalPages && totalPages > 0 {
-		return m.ActorsPaginated{}, fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
+		return m.ActorsPaginated{
+			Actors: []m.ActorWithoutMoviesDto{},
+		}, nil
 	}
 
 	return m.ActorsPaginated{
