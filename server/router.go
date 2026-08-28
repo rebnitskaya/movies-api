@@ -4,6 +4,8 @@ import (
 	h "movies_api/handler"
 	hf "movies_api/helper"
 	"net/http"
+
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandler *h.ActorHandler, genreHandler *h.GenreHandler) {
@@ -31,16 +33,16 @@ func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandl
 	mux.HandleFunc("POST /api/genres", hf.GlobalErrorHandler(genreHandler.PostGenre))
 	mux.HandleFunc("GET /api/genres", hf.GlobalErrorHandler(genreHandler.GetAllGenres))
 	mux.HandleFunc("GET /api/genres/{id}", hf.GlobalErrorHandler(genreHandler.GetGenre))
-	mux.HandleFunc("PATCH /api/genres", hf.GlobalErrorHandler(genreHandler.PatchGenre))
+	mux.HandleFunc("PATCH /api/genres/{id}", hf.GlobalErrorHandler(genreHandler.PatchGenre))
 	mux.HandleFunc("DELETE /api/genres/{id}", hf.GlobalErrorHandler(genreHandler.DeleteGenre))
 	mux.HandleFunc("POST /api/movies/{movieID}/genres/{genreID}", hf.GlobalErrorHandler(movieHandler.PostGenreToMovie))
 	mux.HandleFunc("DELETE /api/movies/{movieID}/genres/{genreID}", hf.GlobalErrorHandler(movieHandler.DeleteGenreFromMovie))
 
-	// planning to use it for automatic documentation for endpoints
-	// mux.Handle(
-	// 	"/swagger/",
-	// 	httpSwagger.Handler(
-	// 		httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
-	// 	),
-	// )
+	// automatic documentation for endpoints
+	mux.Handle(
+		"/swagger/",
+		httpSwagger.Handler(
+			httpSwagger.URL("http://localhost:8080/swagger/doc.json"),
+		),
+	)
 }

@@ -6,9 +6,8 @@ import (
 )
 
 type ActorDto struct {
-	Name      string  `json:"name"`
-	BirthDate string  `json:"birthDate"`
-	Movies    []Movie `json:"movies"`
+	Name      string `json:"name"`
+	BirthDate string `json:"birthDate"`
 }
 
 type ActorInFilmDto struct {

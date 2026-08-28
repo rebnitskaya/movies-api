@@ -1,9 +1,5 @@
 package models
 
-import (
-	"fmt"
-)
-
 type GenreDto struct {
 	Id     int               `json:"id"`
 	Name   string            `json:"name"`
@@ -27,7 +23,6 @@ type GenresPaginated struct {
 	TotalPages int        `json:"totalPages"`
 }
 
-func (m GenreDto) Validate() (bool, error) {
-	fmt.Errorf("Some error")
-	return true, nil
+type CreateGenreDto struct {
+	Name string `json:"name"`
 }
