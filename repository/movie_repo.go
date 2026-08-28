@@ -46,7 +46,7 @@ func (r movieRepository) findActorsForMovies(isSearch bool, title string) (map[i
 	var args []any
 
 	if isSearch {
-		query += ` WHERE m.title LIKE ?`
+		query += ` WHERE m.title LIKE ? COLLATE NOCASE`
 		args = append(args, "%"+title+"%")
 	}
 
