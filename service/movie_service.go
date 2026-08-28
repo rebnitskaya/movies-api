@@ -66,15 +66,17 @@ func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]m.MovieDto, error) 
 	return movies, nil
 }
 
-func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.Movie, error) {
+func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.MovieDto, error) {
 	if year < 1885 || year > 2050 || year == 0 {
-		return []m.Movie{}, fmt.Errorf("%w: invalid release year.", m.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: invalid release year.", m.ErrInvalidInput)
 	}
 
 	movies, err := s.repo.FindMoviesByYear(year)
 	if err != nil {
-		return []m.Movie{}, err
+		return nil, err
 	}
+
+	sortMovies(movies)
 	return movies, nil
 }
 
