@@ -3,13 +3,20 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"movies_api/middleware"
 	m "movies_api/models"
 	"net/http"
 	"strconv"
 )
 
 func (h *GenreHandler) GetAllGenres(w http.ResponseWriter, r *http.Request) error {
-	genres, err := h.service.GetAllGenres()
+
+	page, limit, err := middleware.GetPaginationParams(r)
+	if err != nil {
+		return fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
+	}
+
+	genres, err := h.service.GetAllGenres(page, limit)
 	if err != nil {
 		return err
 	}

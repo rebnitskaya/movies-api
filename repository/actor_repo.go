@@ -274,46 +274,107 @@ func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string) 
 	return actor, nil
 }
 
-func (r actorRepository) FindActorsByName(name string) ([]m.Actor, error) {
+func (r actorRepository) FindActorsByName(name string) ([]m.ActorWithoutMoviesDto, error) {
 	query := `
-		SELECT id, name, birth_date
-		FROM actors
-		WHERE name = ?
+		SELECT
+	    	a.id,
+	     	a.name,
+	      	a.birth_date,
+	       	m.id,
+	    	m.title,
+	        m.release_year,
+	        m.duration
+		FROM actors a
+		LEFT JOIN movie_actors am ON a.id = am.actor_id
+		LEFT JOIN movies m ON am.movie_id = m.id
+		WHERE a.name LIKE ? COLLATE NOCASE
+		ORDER BY a.id
 	`
 
-	rows, err := r.db.Query(query, name)
+	rows, err := r.db.Query(query, "%"+name+"%")
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 	defer rows.Close()
 
-	var actors []m.Actor
+	actorsMap := make(map[int]*m.ActorWithoutMoviesDto)
 
-	found := false
 	for rows.Next() {
-		found = true
-		var actor m.Actor
+		var actorID int
+		var actorName string
+		var birthDate string
+
+		var movieID sql.NullInt64
+		var movieTitle sql.NullString
+		var releaseYear sql.NullInt64
+		var duration sql.NullInt64
 
 		err := rows.Scan(
-			&actor.Id,
-			&actor.Name,
-			&actor.BirthDate,
+			&actorID,
+			&actorName,
+			&birthDate,
+			&movieID,
+			&movieTitle,
+			&releaseYear,
+			&duration,
 		)
 
 		if err != nil {
 			return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 		}
 
-		actors = append(actors, actor)
+		actor, exists := actorsMap[actorID]
+
+		if !exists {
+			actor = &m.ActorWithoutMoviesDto{
+				Id:        actorID,
+				Name:      actorName,
+				BirthDate: birthDate,
+				Movies:    []m.MovieWithoutActorsDto{},
+			}
+
+			actorsMap[actorID] = actor
+		}
+
+		if movieID.Valid {
+			actor.Movies = append(actor.Movies, m.MovieWithoutActorsDto{
+				Id:          int(movieID.Int64),
+				Title:       movieTitle.String,
+				ReleaseYear: int(releaseYear.Int64),
+				Duration:    int(duration.Int64),
+			})
+		}
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
-	if !found {
-		return []m.Actor{}, m.ErrActorNotFound
+	if len(actorsMap) == 0 {
+		return []m.ActorWithoutMoviesDto{}, m.ErrActorNotFound
+	}
+
+	actors := make([]m.ActorWithoutMoviesDto, 0, len(actorsMap))
+
+	for _, actor := range actorsMap {
+		actors = append(actors, *actor)
 	}
 
 	return actors, nil
+}
+
+func (r actorRepository) CountActors() (int, error) {
+	var count int
+
+	query := `
+			SELECT COUNT(*)
+			FROM actors
+		`
+
+	err := r.db.QueryRow(query).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
