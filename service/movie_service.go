@@ -43,6 +43,10 @@ func (s *MovieService) GetAllMovies(page, limit int) (m.MoviesPaginated, error) 
 }
 
 func (s *MovieService) FindOneMovie(id int) (m.MovieDto, error) {
+	if id <= 0 {
+		return m.MovieDto{}, fmt.Errorf("%w: invalid id", m.ErrInvalidInput)
+	}
+
 	movie, err := s.repo.FindMovieByID(id)
 	if err != nil {
 		return m.MovieDto{}, err
@@ -52,6 +56,9 @@ func (s *MovieService) FindOneMovie(id int) (m.MovieDto, error) {
 }
 
 func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]m.MovieDto, error) {
+	if genreID <= 0 {
+		return []m.MovieDto{}, fmt.Errorf("%w: invalid id", m.ErrInvalidInput)
+	}
 	movies, err := s.repo.FindMoviesByGenre(genreID)
 	if err != nil {
 		return []m.MovieDto{}, err
@@ -62,19 +69,25 @@ func (s *MovieService) GetAllMoviesWithGenre(genreID int) ([]m.MovieDto, error) 
 	return movies, nil
 }
 
-func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.Movie, error) {
+func (s *MovieService) GetAllMoviesWithYear(year int) ([]m.MovieDto, error) {
 	if year < 1885 || year > 2050 || year == 0 {
-		return []m.Movie{}, fmt.Errorf("%w: invalid release year.", m.ErrInvalidInput)
+		return nil, fmt.Errorf("%w: invalid release year.", m.ErrInvalidInput)
 	}
 
 	movies, err := s.repo.FindMoviesByYear(year)
 	if err != nil {
-		return []m.Movie{}, err
+		return nil, err
 	}
+
+	sortMovies(movies)
 	return movies, nil
 }
 
 func (s *MovieService) GetAllMoviesWithActor(actorID int) ([]m.MovieDto, error) {
+	if actorID <= 0 {
+		return []m.MovieDto{}, fmt.Errorf("%w: invalid id", m.ErrInvalidInput)
+	}
+
 	movies, err := s.repo.FindMoviesWithActor(actorID)
 	if err != nil {
 		return []m.MovieDto{}, err
@@ -120,6 +133,10 @@ func (s *MovieService) MovieMaker(movieData m.CreateMovieDto) (m.Movie, error) {
 }
 
 func (s *MovieService) MoviePatcher(movieData m.MoviePatchDto, movieID int) (m.Movie, error) {
+	if movieID <= 0 {
+		return m.Movie{}, fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
+	}
+
 	fields := make(map[string]any)
 	_, err := movieData.Validate()
 	if err != nil {
@@ -165,6 +182,10 @@ func (s *MovieService) DeleteMovie(movieID int, force bool) (bool, error) {
 }
 
 func (s *MovieService) FindActorsInMovie(movieID int) ([]m.ActorInFilmDto, error) {
+	if movieID <= 0 {
+		return []m.ActorInFilmDto{}, fmt.Errorf("%w: invalid movie id.", m.ErrBadRequest)
+	}
+
 	movies, err := s.repo.FindAllActorsInMovie(movieID)
 	if err != nil {
 		return []m.ActorInFilmDto{}, err
