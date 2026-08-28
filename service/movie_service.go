@@ -170,23 +170,28 @@ func (s *MovieService) GetAllMoviesWithTitle(title string, page, limit int) ([]m
 	return movies, nil
 }
 
-func (s *MovieService) MovieMaker(movieData m.CreateMovieDto) (m.Movie, error) {
+func (s *MovieService) MovieMaker(movieData m.CreateMovieDto) (m.MovieDto, error) {
 	_, err := movieData.Validate()
 	if err != nil {
-		return m.Movie{}, err
+		return m.MovieDto{}, err
 	}
 
 	res, err := s.repo.FindMovieByTitleAndYear(movieData.Title, movieData.ReleaseYear)
 	if res.Title == movieData.Title && res.ReleaseYear == movieData.ReleaseYear {
-		return m.Movie{}, m.ErrMovieHasBeenMadeBefore
+		return m.MovieDto{}, m.ErrMovieHasBeenMadeBefore
 	}
 
 	movie, error := s.repo.CreateMovie(movieData)
 	if error != nil {
-		return m.Movie{}, error
+		return m.MovieDto{}, error
 	}
 
-	return movie, nil
+	movieDto, error := s.repo.FindMovieByID(movie.Id)
+	if error != nil {
+		return m.MovieDto{}, error
+	}
+
+	return movieDto, nil
 }
 
 func (s *MovieService) MoviePatcher(movieData m.MoviePatchDto, movieID int) (m.Movie, error) {
