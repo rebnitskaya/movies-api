@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	m "movies_api/models"
@@ -12,11 +13,10 @@ type ActorService struct {
 	repo r.ActorRepository
 }
 
-func (s *ActorService) GetAllActors(page, limit int) (m.ActorsPaginated, error) {
-
+func (s *ActorService) GetAllActors(page, limit int, ctx context.Context) (m.ActorsPaginated, error) {
 	offset := (page - 1) * limit
 
-	actors, err := s.repo.FindAllActors(limit, offset)
+	actors, err := s.repo.FindAllActors(limit, offset, ctx)
 	if err != nil {
 		return m.ActorsPaginated{}, err
 	}
@@ -47,7 +47,7 @@ func (s *ActorService) GetAllActors(page, limit int) (m.ActorsPaginated, error) 
 	}
 
 	pageSize := len(result)
-	totalActors, err := s.repo.CountActors()
+	totalActors, err := s.repo.CountActors(ctx)
 	if err != nil {
 		return m.ActorsPaginated{}, err
 	}
@@ -68,22 +68,16 @@ func (s *ActorService) GetAllActors(page, limit int) (m.ActorsPaginated, error) 
 	}, nil
 }
 
-func (s *ActorService) CreateActor(actorData m.ActorDto) (m.Actor, error) {
+func (s *ActorService) CreateActor(actorData m.ActorDto, ctx context.Context) (m.Actor, error) {
 	_, err := actorData.Validate()
 	if err != nil {
 		return m.Actor{}, err
 	}
 
-	_, err = s.repo.FindActorByNameAndBirthDate(
-		actorData.Name,
-		actorData.BirthDate,
-	)
+	_, err = s.repo.FindActorByNameAndBirthDate(actorData.Name, actorData.BirthDate, ctx)
 
 	if err == nil {
-		return m.Actor{}, fmt.Errorf(
-			"%w: this actor already has been made before",
-			m.ErrBadRequest,
-		)
+		return m.Actor{}, fmt.Errorf("%w: this actor already has been made before", m.ErrBadRequest)
 	}
 
 	if !errors.Is(err, m.ErrActorNotFound) {
@@ -96,7 +90,7 @@ func (s *ActorService) CreateActor(actorData m.ActorDto) (m.Actor, error) {
 		Movies:    actorData.Movies,
 	}
 
-	createdActor, err := s.repo.CreateActor(actor)
+	createdActor, err := s.repo.CreateActor(actor, ctx)
 	if err != nil {
 		return m.Actor{}, err
 	}
@@ -104,12 +98,12 @@ func (s *ActorService) CreateActor(actorData m.ActorDto) (m.Actor, error) {
 	return createdActor, nil
 }
 
-func (s *ActorService) DeleteActor(id int, force bool) (bool, error) {
+func (s *ActorService) DeleteActor(id int, force bool, ctx context.Context) (bool, error) {
 	if id <= 0 {
 		return false, fmt.Errorf("%w: invalid actor id.", m.ErrBadRequest)
 	}
 
-	actor, err := s.repo.FindActorByID(id)
+	actor, err := s.repo.FindActorByID(id, ctx)
 	if err != nil {
 		return false, err
 	}
@@ -122,7 +116,7 @@ func (s *ActorService) DeleteActor(id int, force bool) (bool, error) {
 		)
 	}
 
-	_, err = s.repo.DeleteActorByID(id)
+	_, err = s.repo.DeleteActorByID(id, ctx)
 	if err != nil {
 		return false, err
 	}
@@ -130,8 +124,8 @@ func (s *ActorService) DeleteActor(id int, force bool) (bool, error) {
 	return true, nil
 }
 
-func (s *ActorService) GetActor(id int) (m.ActorWithoutMoviesDto, error) {
-	actor, err := s.repo.FindActorByID(id)
+func (s *ActorService) GetActor(id int, ctx context.Context) (m.ActorWithoutMoviesDto, error) {
+	actor, err := s.repo.FindActorByID(id, ctx)
 	if err != nil {
 		return m.ActorWithoutMoviesDto{}, err
 	}
@@ -154,21 +148,21 @@ func (s *ActorService) GetActor(id int) (m.ActorWithoutMoviesDto, error) {
 	return actorDTO, nil
 }
 
-func (s *ActorService) PatchActor(actorId int, data map[string]string) (m.Actor, error) {
+func (s *ActorService) PatchActor(actorId int, data map[string]string, ctx context.Context) (m.Actor, error) {
 	err := m.ValidatePatchActor(data)
 	if err != nil {
 		return m.Actor{}, err
 	}
 
-	actor, err := s.repo.ReplaceFieldsInActor(actorId, data)
+	actor, err := s.repo.ReplaceFieldsInActor(actorId, data, ctx)
 	if err != nil {
 		return m.Actor{}, err
 	}
 	return actor, nil
 }
 
-func (s *ActorService) GetActorsWithName(name string) ([]m.ActorWithoutMoviesDto, error) {
-	actors, err := s.repo.FindActorsByName(name)
+func (s *ActorService) GetActorsWithName(name string, ctx context.Context) ([]m.ActorWithoutMoviesDto, error) {
+	actors, err := s.repo.FindActorsByName(name, ctx)
 	if err != nil {
 		return nil, err
 	}

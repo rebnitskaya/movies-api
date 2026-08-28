@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	ctx := context.Background() //just for the start, will add some later
+	ctx := context.Background()
 
 	initiate, err := cli.FlagHandling()
 	if err != nil {

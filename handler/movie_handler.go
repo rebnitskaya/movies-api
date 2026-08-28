@@ -3,22 +3,21 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"movies_api/middleware"
+	"movies_api/helper"
 	m "movies_api/models"
 	"net/http"
 	"strconv"
 )
 
 func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
 
-	page, limit, err := middleware.GetPaginationParams(r)
+	page, limit, err := helper.GetPaginationParams(r)
 	if err != nil {
 		return fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
 	}
 
 	query := r.URL.Query()
-
-	w.Header().Set("Content-Type", "application/json")
 
 	//not yet ready
 	if genre := query.Get("genre"); genre != "" {
@@ -27,7 +26,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("%w: invalid genre id", m.ErrInvalidInput)
 		}
 
-		movies, err := h.service.GetAllMoviesWithGenre(genreID, page, limit)
+		movies, err := h.service.GetAllMoviesWithGenre(genreID, page, limit, ctx)
 		if err != nil {
 			return err
 		}
@@ -41,7 +40,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("%w: invalid year format", m.ErrInvalidInput)
 		}
 
-		movies, err := h.service.GetAllMoviesWithYear(year, page, limit)
+		movies, err := h.service.GetAllMoviesWithYear(year, page, limit, ctx)
 		if err != nil {
 			return err
 		}
@@ -55,7 +54,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("%w: invalid actor id", m.ErrInvalidInput)
 		}
 
-		movies, err := h.service.GetAllMoviesWithActor(actorID, page, limit)
+		movies, err := h.service.GetAllMoviesWithActor(actorID, page, limit, ctx)
 		if err != nil {
 			return err
 		}
@@ -63,16 +62,20 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 		return json.NewEncoder(w).Encode(movies)
 	}
 
-	movies, err := h.service.GetAllMovies(page, limit)
+	movies, err := h.service.GetAllMovies(page, limit, ctx)
 	if err != nil {
 		return err
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 
 	return json.NewEncoder(w).Encode(movies)
 }
 
 func (h *MovieHandler) SearchByTitle(w http.ResponseWriter, r *http.Request) error {
-	page, limit, err := middleware.GetPaginationParams(r)
+	ctx := r.Context()
+
+	page, limit, err := helper.GetPaginationParams(r)
 	if err != nil {
 		return fmt.Errorf("%w: invalid pagination", m.ErrInvalidInput)
 	}
@@ -83,7 +86,7 @@ func (h *MovieHandler) SearchByTitle(w http.ResponseWriter, r *http.Request) err
 
 	//not yet ready
 	if title := query.Get("title"); title != "" {
-		movies, err := h.service.GetAllMoviesWithTitle(title, page, limit)
+		movies, err := h.service.GetAllMoviesWithTitle(title, page, limit, ctx)
 		if err != nil {
 			return err
 		}
@@ -95,12 +98,14 @@ func (h *MovieHandler) SearchByTitle(w http.ResponseWriter, r *http.Request) err
 }
 
 func (h *MovieHandler) GetMovie(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	movieId, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
 	}
 
-	movie, err := h.service.FindOneMovie(movieId)
+	movie, err := h.service.FindOneMovie(movieId, ctx)
 	if err != nil {
 		return err
 	}
@@ -111,6 +116,8 @@ func (h *MovieHandler) GetMovie(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	movieDto := m.CreateMovieDto{}
 
 	err := json.NewDecoder(r.Body).Decode(&movieDto)
@@ -118,7 +125,7 @@ func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) error {
 		return fmt.Errorf("%w: something is wrong with incoming data: %s", m.ErrInvalidInput, err)
 	}
 
-	movie, err := h.service.MovieMaker(movieDto)
+	movie, err := h.service.MovieMaker(movieDto, ctx)
 	if err != nil {
 		return err
 	}
@@ -129,6 +136,8 @@ func (h *MovieHandler) PostMovie(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	movieId, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
@@ -140,7 +149,7 @@ func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) error 
 		return fmt.Errorf("%w: something wrong with incoming data: %s", m.ErrInvalidInput, err)
 	}
 
-	movie, err := h.service.MoviePatcher(data, movieId)
+	movie, err := h.service.MoviePatcher(data, movieId, ctx)
 	if err != nil {
 		return err
 	}
@@ -151,6 +160,8 @@ func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) error 
 }
 
 func (h *MovieHandler) DeleteMovie(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	movieId, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
@@ -158,7 +169,7 @@ func (h *MovieHandler) DeleteMovie(w http.ResponseWriter, r *http.Request) error
 
 	force := r.URL.Query().Get("force") == "true"
 
-	ok, err := h.service.DeleteMovie(movieId, force)
+	ok, err := h.service.DeleteMovie(movieId, force, ctx)
 	if err != nil {
 		return err
 	}
@@ -172,6 +183,8 @@ func (h *MovieHandler) DeleteMovie(w http.ResponseWriter, r *http.Request) error
 }
 
 func (h *MovieHandler) PostActorToMovie(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	movieID, err := strconv.Atoi(r.PathValue("movieID"))
 	if err != nil {
 		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
@@ -181,7 +194,7 @@ func (h *MovieHandler) PostActorToMovie(w http.ResponseWriter, r *http.Request) 
 		return fmt.Errorf("%w: invalid actor id", m.ErrInvalidInput)
 	}
 
-	movie, err := h.service.AddActorToMovie(movieID, actorID)
+	movie, err := h.service.AddActorToMovie(movieID, actorID, ctx)
 	if err != nil {
 		return err
 	}
@@ -192,6 +205,8 @@ func (h *MovieHandler) PostActorToMovie(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *MovieHandler) DeleteActorFromMovie(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	movieID, err := strconv.Atoi(r.PathValue("movieID"))
 	if err != nil {
 		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
@@ -201,7 +216,7 @@ func (h *MovieHandler) DeleteActorFromMovie(w http.ResponseWriter, r *http.Reque
 		return fmt.Errorf("%w: invalid actor id", m.ErrInvalidInput)
 	}
 
-	movie, err := h.service.DeleteActorFromMovie(movieID, actorID)
+	movie, err := h.service.DeleteActorFromMovie(movieID, actorID, ctx)
 	if err != nil {
 		return err
 	}
@@ -212,12 +227,14 @@ func (h *MovieHandler) DeleteActorFromMovie(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *MovieHandler) GetActorsInMovie(w http.ResponseWriter, r *http.Request) error {
+	ctx := r.Context()
+
 	movieID, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		return fmt.Errorf("%w: invalid movie id", m.ErrInvalidInput)
 	}
 
-	movies, err := h.service.FindActorsInMovie(movieID)
+	movies, err := h.service.FindActorsInMovie(movieID, ctx)
 	if err != nil {
 		return err
 	}
