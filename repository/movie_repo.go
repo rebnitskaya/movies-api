@@ -156,10 +156,7 @@ func (r movieRepository) findActorsForMovies(movieIDs []int) (map[int][]models.A
 	return actorsMap, nil
 }
 
-func (r movieRepository) findGenresForMovies(
-	movieIDs []int,
-) (map[int][]models.GenreWithoutMovies, error) {
-
+func (r movieRepository) findGenresForMovies(movieIDs []int) (map[int][]models.GenreWithoutMovies, error) {
 	if len(movieIDs) == 0 {
 		return make(map[int][]models.GenreWithoutMovies), nil
 	}
