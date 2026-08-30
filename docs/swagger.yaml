@@ -1,0 +1,914 @@
+basePath: /api
+definitions:
+  models.ActorDto:
+    properties:
+      birthDate:
+        type: string
+      name:
+        type: string
+    type: object
+  models.ActorInFilmDto:
+    properties:
+      birthDate:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  models.ActorWithoutMoviesDto:
+    properties:
+      birthDate:
+        type: string
+      id:
+        type: integer
+      movies:
+        items:
+          $ref: '#/definitions/models.MovieWithoutActorsDto'
+        type: array
+      name:
+        type: string
+    type: object
+  models.ActorsPaginated:
+    properties:
+      actors:
+        items:
+          $ref: '#/definitions/models.ActorWithoutMoviesDto'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  models.CreateGenreDto:
+    properties:
+      name:
+        type: string
+    type: object
+  models.CreateMovieDto:
+    properties:
+      actors:
+        items:
+          type: integer
+        type: array
+      duration:
+        type: integer
+      genres:
+        items:
+          type: integer
+        type: array
+      releaseYear:
+        type: integer
+      title:
+        type: string
+    type: object
+  models.GenreDto:
+    properties:
+      id:
+        type: integer
+      movies:
+        items:
+          $ref: '#/definitions/models.MovieSummaryDto'
+        type: array
+      name:
+        type: string
+    type: object
+  models.GenreWithoutMovies:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  models.GenresPaginated:
+    properties:
+      genres:
+        items:
+          $ref: '#/definitions/models.GenreDto'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+  models.MovieDto:
+    properties:
+      actors:
+        items:
+          $ref: '#/definitions/models.ActorInFilmDto'
+        type: array
+      duration:
+        type: integer
+      genres:
+        items:
+          $ref: '#/definitions/models.GenreWithoutMovies'
+        type: array
+      id:
+        type: integer
+      releaseYear:
+        type: integer
+      title:
+        type: string
+    type: object
+  models.MoviePatchDto:
+    properties:
+      duration:
+        type: integer
+      releaseYear:
+        type: integer
+      title:
+        type: string
+    type: object
+  models.MovieSummaryDto:
+    properties:
+      movieId:
+        type: integer
+      movieName:
+        type: string
+    type: object
+  models.MovieWithoutActorsDto:
+    properties:
+      duration:
+        type: integer
+      id:
+        type: integer
+      releaseYear:
+        type: integer
+      title:
+        type: string
+    type: object
+  models.MoviesPaginated:
+    properties:
+      movies:
+        items:
+          $ref: '#/definitions/models.MovieDto'
+        type: array
+      page:
+        type: integer
+      pageSize:
+        type: integer
+      totalPages:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: REST API for managing movies, genres and actors.
+  title: Movie Database API
+  version: "1.0"
+paths:
+  /actors:
+    get:
+      description: Returns a paginated list of actors. Use the optional name query
+        parameter to filter actors by name.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 5
+        description: Number of actors per page
+        in: query
+        name: size
+        type: integer
+      - description: Filter actors by name
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ActorsPaginated'
+        "400":
+          description: invalid pagination parameters
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get all actors
+      tags:
+      - actors
+    post:
+      consumes:
+      - application/json
+      description: Creates a new actor.
+      parameters:
+      - description: Actor data
+        in: body
+        name: actor
+        required: true
+        schema:
+          $ref: '#/definitions/models.ActorDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.ActorInFilmDto'
+        "400":
+          description: Invalid request data
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create an actor
+      tags:
+      - actors
+  /actors/{id}:
+    delete:
+      description: Deletes an actor by ID. By default, an actor associated with movies
+        cannot be deleted. Use force=true to delete the actor and its movie associations.
+      parameters:
+      - description: Actor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Force deletion even if the actor is associated with movies
+        in: query
+        name: force
+        type: boolean
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete an actor
+      tags:
+      - actors
+    get:
+      description: Returns an actor by ID.
+      parameters:
+      - description: Actor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ActorWithoutMoviesDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get an actor
+      tags:
+      - actors
+    patch:
+      consumes:
+      - application/json
+      description: Updates one or more fields of an existing actor.
+      parameters:
+      - description: Actor ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Fields to update
+        in: body
+        name: actor
+        required: true
+        schema:
+          additionalProperties:
+            type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ActorInFilmDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update an actor
+      tags:
+      - actors
+  /genres:
+    get:
+      description: Returns a paginated list of genres, including their associated
+        movies.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of genres per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GenresPaginated'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get all genres
+      tags:
+      - genres
+    post:
+      consumes:
+      - application/json
+      description: Creates a new genre.
+      parameters:
+      - description: Genre data
+        in: body
+        name: genre
+        required: true
+        schema:
+          $ref: '#/definitions/models.GenreDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.CreateGenreDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a genre
+      tags:
+      - genres
+  /genres/{id}:
+    delete:
+      description: Deletes a genre by ID. If the genre is associated with movies,
+        deletion requires force=true. Associated movie relationships are removed through
+        cascading foreign keys.
+      parameters:
+      - description: Genre ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Force deletion when the genre has associated movies
+        in: query
+        name: force
+        required: true
+        type: boolean
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a genre
+      tags:
+      - genres
+    get:
+      description: Returns a genre by ID, including movies associated with the genre.
+      parameters:
+      - description: Genre ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GenreDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get genre by ID
+      tags:
+      - genres
+    patch:
+      consumes:
+      - application/json
+      description: Updates the name of an existing genre.
+      parameters:
+      - description: Genre ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Genre data
+        in: body
+        name: genre
+        required: true
+        schema:
+          $ref: '#/definitions/models.GenreDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.GenreDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update a genre
+      tags:
+      - genres
+  /movies:
+    get:
+      description: Returns a paginated list of movies. Results can optionally be filtered
+        by genre, release year, or actor.
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 5
+        description: Number of movies per page
+        in: query
+        name: size
+        type: integer
+      - description: Filter movies by genre ID
+        in: query
+        name: genre
+        type: integer
+      - description: Filter movies by release year
+        in: query
+        name: year
+        type: integer
+      - description: Filter movies by actor ID
+        in: query
+        name: actor
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MoviesPaginated'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get movies
+      tags:
+      - movies
+    post:
+      consumes:
+      - application/json
+      description: Creates a new movie and optionally associates it with existing
+        actors and genres.
+      parameters:
+      - description: Movie data
+        in: body
+        name: movie
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateMovieDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.MovieDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a movie
+      tags:
+      - movies
+  /movies/{id}:
+    delete:
+      description: Deletes a movie by ID. Deletion requires the force query parameter
+        to be set to true. Associated actor and genre relationships are removed through
+        cascading foreign keys.
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Must be true to allow deletion
+        in: query
+        name: force
+        required: true
+        type: boolean
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a movie
+      tags:
+      - movies
+    get:
+      description: Returns a movie by its ID, including its associated actors and
+        genres.
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MovieDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get movie by ID
+      tags:
+      - movies
+    patch:
+      consumes:
+      - application/json
+      description: Updates one or more fields of an existing movie. Only provided
+        fields are modified.
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Movie fields to update
+        in: body
+        name: movie
+        required: true
+        schema:
+          $ref: '#/definitions/models.MoviePatchDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MovieDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update a movie
+      tags:
+      - movies
+  /movies/{id}/actors:
+    get:
+      description: Returns all actors associated with the specified movie.
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.ActorInFilmDto'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get actors in a movie
+      tags:
+      - movies
+  /movies/{movieID}/actors/{actorID}:
+    delete:
+      description: Removes the association between an actor and a movie and returns
+        the movie.
+      parameters:
+      - description: Movie ID
+        in: path
+        name: movieID
+        required: true
+        type: integer
+      - description: Actor ID
+        in: path
+        name: actorID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MovieDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Remove actor from movie
+      tags:
+      - movies
+    post:
+      description: Associates an existing actor with an existing movie and returns
+        the updated movie.
+      parameters:
+      - description: Movie ID
+        in: path
+        name: movieID
+        required: true
+        type: integer
+      - description: Actor ID
+        in: path
+        name: actorID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MovieDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Add actor to movie
+      tags:
+      - movies
+  /movies/{movieID}/genres/{genreID}:
+    delete:
+      description: Removes the association between a genre and a movie and returns
+        the updated movie.
+      parameters:
+      - description: Movie ID
+        in: path
+        name: movieID
+        required: true
+        type: integer
+      - description: Genre ID
+        in: path
+        name: genreID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MovieDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Remove genre from movie
+      tags:
+      - movies
+    post:
+      description: Associates an existing genre with an existing movie and returns
+        the updated movie.
+      parameters:
+      - description: Movie ID
+        in: path
+        name: movieID
+        required: true
+        type: integer
+      - description: Genre ID
+        in: path
+        name: genreID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MovieDto'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Add genre to movie
+      tags:
+      - movies
+  /movies/search:
+    get:
+      description: Returns movies whose titles contain the specified search text.
+        The search is case-insensitive and supports pagination.
+      parameters:
+      - description: Text to search for in movie titles
+        in: query
+        name: title
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Number of movies per page
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.MovieDto'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Search movies by title
+      tags:
+      - movies
+swagger: "2.0"

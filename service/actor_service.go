@@ -87,7 +87,6 @@ func (s *ActorService) CreateActor(actorData m.ActorDto, ctx context.Context) (m
 	actor := m.Actor{
 		Name:      actorData.Name,
 		BirthDate: actorData.BirthDate,
-		Movies:    actorData.Movies,
 	}
 
 	createdActor, err := s.repo.CreateActor(actor, ctx)
