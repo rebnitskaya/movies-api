@@ -20,7 +20,7 @@ func RegisterRoutes(mux *http.ServeMux, movieHandler *h.MovieHandler, actorHandl
 
 	//movies
 	mux.HandleFunc("POST /api/movies", hf.GlobalErrorHandler(movieHandler.PostMovie))
-	mux.HandleFunc("GET /api/movies/", hf.GlobalErrorHandler(movieHandler.GetMovies))
+	mux.HandleFunc("GET /api/movies", hf.GlobalErrorHandler(movieHandler.GetMovies))
 	mux.HandleFunc("GET /api/movies/{id}", hf.GlobalErrorHandler(movieHandler.GetMovie))
 	mux.HandleFunc("PATCH /api/movies/{id}", hf.GlobalErrorHandler(movieHandler.PatchMovie))
 	mux.HandleFunc("DELETE /api/movies/{id}", hf.GlobalErrorHandler(movieHandler.DeleteMovie))

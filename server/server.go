@@ -37,6 +37,9 @@ func Server(ctx context.Context, init bool) (*http.Server, error) {
 	}
 
 	if init {
+		if err := db.SeedDatabase(dataBase); err != nil {
+			return nil, fmt.Errorf("can't seed database: %w", err)
+		}
 		db.SeedDatabase(dataBase) //fill with init data
 	}
 
