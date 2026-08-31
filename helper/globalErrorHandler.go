@@ -7,7 +7,9 @@ import (
 	"net/http"
 )
 
-func GlobalErrorHandler(h models.AppHandler) http.HandlerFunc {
+type AppHandler func(w http.ResponseWriter, r *http.Request) error
+
+func GlobalErrorHandler(h AppHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := h(w, r); err != nil {
 			handleError(w, err)
