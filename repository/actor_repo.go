@@ -1,12 +1,13 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	m "movies_api/models"
 )
 
-func (r actorRepository) FindAllActors(limit, offset int) ([]m.Actor, error) {
+func (r actorRepository) FindAllActors(limit, offset int, ctx context.Context) ([]m.Actor, error) {
 	query := `
 		SELECT
 	    	a.id,
@@ -27,7 +28,7 @@ func (r actorRepository) FindAllActors(limit, offset int) ([]m.Actor, error) {
 		ORDER BY a.id
 	`
 
-	rows, err := r.db.Query(query, limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -87,14 +88,14 @@ func (r actorRepository) FindAllActors(limit, offset int) ([]m.Actor, error) {
 	return actors, nil
 }
 
-func (r actorRepository) CreateActor(actor m.Actor) (m.Actor, error) {
+func (r actorRepository) CreateActor(actor m.Actor, ctx context.Context) (m.Actor, error) {
 	query := `
 		INSERT INTO actors (name, birth_date)
 		VALUES (?,?)
 		RETURNING id,  name, birth_date
 	`
 
-	err := r.db.QueryRow(query, actor.Name, actor.BirthDate).Scan(
+	err := r.db.QueryRowContext(ctx, query, actor.Name, actor.BirthDate).Scan(
 		&actor.Id,
 		&actor.Name,
 		&actor.BirthDate,
@@ -106,14 +107,14 @@ func (r actorRepository) CreateActor(actor m.Actor) (m.Actor, error) {
 	return actor, nil
 }
 
-func (r actorRepository) FindActorByNameAndBirthDate(name string, birthDate string) (m.Actor, error) {
+func (r actorRepository) FindActorByNameAndBirthDate(name string, birthDate string, ctx context.Context) (m.Actor, error) {
 	query := `
 		SELECT *
 		FROM actors
 		WHERE name = ? AND birth_date = ?
 	`
 
-	rows, err := r.db.Query(query, name, birthDate)
+	rows, err := r.db.QueryContext(ctx, query, name, birthDate)
 	if err != nil {
 		return m.Actor{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -149,12 +150,12 @@ func (r actorRepository) FindActorByNameAndBirthDate(name string, birthDate stri
 	return actor, nil
 }
 
-func (r actorRepository) DeleteActorByID(id int) (bool, error) {
+func (r actorRepository) DeleteActorByID(id int, ctx context.Context) (bool, error) {
 	query := `
 		DELETE FROM actors
 		WHERE id = ?
 	`
-	result, err := r.db.Exec(query, id)
+	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {
 		return false, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -171,7 +172,7 @@ func (r actorRepository) DeleteActorByID(id int) (bool, error) {
 	return true, nil
 }
 
-func (r actorRepository) FindActorByID(id int) (m.Actor, error) {
+func (r actorRepository) FindActorByID(id int, ctx context.Context) (m.Actor, error) {
 	query := `
 	SELECT a.id, a.name, a.birth_date, m.id, m.title, m.release_year, m.duration
 		FROM actors a
@@ -180,7 +181,7 @@ func (r actorRepository) FindActorByID(id int) (m.Actor, error) {
 		WHERE a.id = ?
 	`
 
-	rows, err := r.db.Query(query, id)
+	rows, err := r.db.QueryContext(ctx, query, id)
 	if err != nil {
 		return m.Actor{}, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -231,7 +232,7 @@ func (r actorRepository) FindActorByID(id int) (m.Actor, error) {
 
 }
 
-func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string) (m.Actor, error) {
+func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string, ctx context.Context) (m.Actor, error) {
 	query := "UPDATE actors SET "
 	args := []any{}
 
@@ -262,7 +263,7 @@ func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string) 
 
 	var actor m.Actor
 
-	err := r.db.QueryRow(query, args...).Scan(
+	err := r.db.QueryRowContext(ctx, query, args...).Scan(
 		&actor.Id,
 		&actor.Name,
 		&actor.BirthDate,
@@ -274,7 +275,7 @@ func (r actorRepository) ReplaceFieldsInActor(id int, fields map[string]string) 
 	return actor, nil
 }
 
-func (r actorRepository) FindActorsByName(name string) ([]m.ActorWithoutMoviesDto, error) {
+func (r actorRepository) FindActorsByName(name string, ctx context.Context) ([]m.ActorWithoutMoviesDto, error) {
 	query := `
 		SELECT
 	    	a.id,
@@ -291,7 +292,7 @@ func (r actorRepository) FindActorsByName(name string) ([]m.ActorWithoutMoviesDt
 		ORDER BY a.id
 	`
 
-	rows, err := r.db.Query(query, "%"+name+"%")
+	rows, err := r.db.QueryContext(ctx, query, "%"+name+"%")
 	if err != nil {
 		return nil, fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
@@ -363,7 +364,7 @@ func (r actorRepository) FindActorsByName(name string) ([]m.ActorWithoutMoviesDt
 	return actors, nil
 }
 
-func (r actorRepository) CountActors() (int, error) {
+func (r actorRepository) CountActors(ctx context.Context) (int, error) {
 	var count int
 
 	query := `
@@ -371,7 +372,7 @@ func (r actorRepository) CountActors() (int, error) {
 			FROM actors
 		`
 
-	err := r.db.QueryRow(query).Scan(&count)
+	err := r.db.QueryRowContext(ctx, query).Scan(&count)
 	if err != nil {
 		return 0, err
 	}

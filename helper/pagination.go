@@ -1,4 +1,4 @@
-package middleware
+package helper
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ func GetPaginationParams(r *http.Request) (int, int, error) {
 		page = value
 	}
 
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+	if limitStr := r.URL.Query().Get("size"); limitStr != "" {
 		value, err := strconv.Atoi(limitStr)
 		if err != nil || value < 1 {
 			return 0, 0, fmt.Errorf("Invalid limit")

@@ -5,13 +5,19 @@ import (
 	"fmt"
 	"log"
 	"movies_api/cli"
+	_ "movies_api/docs"
 	"movies_api/server"
 	"net/http"
 	"os"
 )
 
+// @title Movie Database API
+// @version 1.0
+// @description REST API for managing movies, genres and actors.
+// @host localhost:8080
+// @BasePath /api
 func main() {
-	ctx := context.Background() //just for the start, will add some later
+	ctx := context.Background()
 
 	initiate, err := cli.FlagHandling()
 	if err != nil {

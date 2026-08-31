@@ -43,8 +43,10 @@ func Server(ctx context.Context, init bool) (*http.Server, error) {
 	dependencyWiring(mux, dataBase)
 
 	srv := &http.Server{
-		Addr:    cfg.Host + ":" + cfg.Port,
-		Handler: middleware.Recover(mux),
+		Addr: cfg.Host + ":" + cfg.Port,
+		Handler: middleware.Timeout(
+			middleware.Recover(mux),
+		),
 		BaseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
