@@ -218,7 +218,7 @@ func (h *MovieHandler) PatchMovie(w http.ResponseWriter, r *http.Request) error 
 		return err
 	}
 
-	w.Header().Set("Content-Type", "aplication/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	return json.NewEncoder(w).Encode(movie)
 }
@@ -349,7 +349,7 @@ func (h *MovieHandler) GetActorsInMovie(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	w.Header().Set("Content-Type", "aplication/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	return json.NewEncoder(w).Encode(movies)
 }
