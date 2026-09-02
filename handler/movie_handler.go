@@ -33,6 +33,7 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	query := r.URL.Query()
+	w.Header().Set("Content-Type", "application/json")
 
 	//not yet ready
 	if genre := query.Get("genre"); genre != "" {
@@ -81,8 +82,6 @@ func (h *MovieHandler) GetMovies(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 
 	return json.NewEncoder(w).Encode(movies)
 }

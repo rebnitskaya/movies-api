@@ -8,6 +8,8 @@ import (
 	"movies_api/models"
 	m "movies_api/models"
 	"strings"
+
+	"github.com/mattn/go-sqlite3"
 )
 
 func (r movieRepository) FindAllMovies(isSearch bool, title string, limit, offset int, ctx context.Context) ([]models.MovieDto, error) {
@@ -826,6 +828,14 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int, ctx context.Conte
 
 	_, err = r.db.ExecContext(ctx, query, movieID, actorID)
 	if err != nil {
+		var sqliteErr sqlite3.Error
+
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.Code == sqlite3.ErrConstraint {
+				return fmt.Errorf("%w: actor already in the movie.", m.ErrConflict)
+			}
+		}
+
 		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 
