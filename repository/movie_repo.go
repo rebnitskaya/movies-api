@@ -814,13 +814,12 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int, ctx context.Conte
 			return fmt.Errorf("%w: actor with id %d doesn't exist, can't add it to movie.", m.ErrActorNotFound, actorID)
 		}
 
-		return fmt.Errorf("%w: failed to check genre: %w", m.ErrInternalIssue, err)
+		return fmt.Errorf("%w: failed to check actor: %w", m.ErrInternalIssue, err)
 	}
 
 	err = r.db.QueryRowContext(ctx, checkMovie, movieID).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("%w: movie with id %d doesn't exist, can't add a genre to it.", m.ErrMovieNotFound, movieID)
 		}
 
 		return fmt.Errorf("%w: failed to check movie: %w", m.ErrInternalIssue, err)
