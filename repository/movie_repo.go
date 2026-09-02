@@ -804,6 +804,13 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int, ctx context.Conte
 		SELECT id FROM movies WHERE id = ?
 	`
 
+	checkRelation := `
+    SELECT 1
+    FROM movie_actors
+    WHERE movie_id = ?
+    AND actor_id = ?
+	`
+
 	var id int
 
 	err := r.db.QueryRowContext(ctx, checkActor, actorID).Scan(&id)
@@ -812,16 +819,28 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int, ctx context.Conte
 			return fmt.Errorf("%w: actor with id %d doesn't exist, can't add it to movie.", m.ErrActorNotFound, actorID)
 		}
 
-		return fmt.Errorf("%w: failed to check genre: %w", m.ErrInternalIssue, err)
+		return fmt.Errorf("%w: failed to check movie: %w", m.ErrInternalIssue, err)
 	}
 
 	err = r.db.QueryRowContext(ctx, checkMovie, movieID).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("%w: movie with id %d doesn't exist, can't add a genre to it.", m.ErrMovieNotFound, movieID)
+			return fmt.Errorf("%w: movie with id %d doesn't exist, can't add an actor to it.", m.ErrMovieNotFound, movieID)
 		}
 
 		return fmt.Errorf("%w: failed to check movie: %w", m.ErrInternalIssue, err)
+	}
+
+	err = r.db.QueryRowContext(ctx, checkRelation, movieID, actorID).Scan(&id)
+
+	if err == nil {
+		return fmt.Errorf("%w: actor with id %d is already added to movie %d",
+			m.ErrInvalidInput, actorID, movieID)
+	}
+
+	if !errors.Is(err, sql.ErrNoRows) {
+		return fmt.Errorf("%w: failed to check actor-movie relation: %w",
+			m.ErrInternalIssue, err)
 	}
 
 	_, err = r.db.ExecContext(ctx, query, movieID, actorID)
