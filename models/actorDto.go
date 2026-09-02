@@ -37,6 +37,10 @@ func (m ActorDto) Validate() (bool, error) {
 		time.UTC,
 	)
 
+	if m.Name == "" {
+		return false, fmt.Errorf("%w: actor name cannot be empty", ErrBadRequest)
+	}
+
 	birthDate, err := time.Parse("2006-01-02", m.BirthDate)
 	if err != nil {
 		return false, fmt.Errorf("%w: actors birth date must be in YYYY-MM-DD format.", ErrBadRequest)
