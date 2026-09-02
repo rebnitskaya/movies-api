@@ -14,6 +14,7 @@ var (
 	ErrGenreNotFound          = errors.New("genre not found")
 	ErrInvalidInput           = errors.New("invalid input")
 	ErrBadRequest             = errors.New("failed to process request")
+	ErrConflict               = errors.New("conflict in request processing")
 	ErrMovieHasBeenMadeBefore = errors.New("this movie already has been made before")
 	ErrInternalIssue          = errors.New("error during program execution")
 )
