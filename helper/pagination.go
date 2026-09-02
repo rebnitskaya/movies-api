@@ -7,12 +7,12 @@ import (
 )
 
 func GetPaginationParams(r *http.Request) (int, int, error) {
-	page := 1
+	page := 0
 	limit := 5
 
 	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
 		value, err := strconv.Atoi(pageStr)
-		if err != nil || value < 1 {
+		if err != nil || value < 0 {
 			return 0, 0, fmt.Errorf("Invalid page")
 		}
 		page = value

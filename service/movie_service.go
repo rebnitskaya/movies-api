@@ -14,7 +14,7 @@ type MovieService struct {
 }
 
 func (s *MovieService) GetAllMovies(page, limit int, ctx context.Context) (m.MoviesPaginated, error) {
-	offset := (page - 1) * limit
+	offset := page * limit
 	movies, err := s.repo.FindAllMovies(false, "", limit, offset, ctx)
 	if err != nil {
 		return m.MoviesPaginated{}, err
@@ -62,7 +62,7 @@ func (s *MovieService) GetAllMoviesWithGenre(genreID, page, limit int, ctx conte
 		return m.MoviesPaginated{}, fmt.Errorf("%w: invalid id", m.ErrInvalidInput)
 	}
 
-	offset := (page - 1) * limit
+	offset := page * limit
 	movies, err := s.repo.FindMoviesByGenre(genreID, limit, offset, ctx)
 	if err != nil {
 		return m.MoviesPaginated{}, err
@@ -95,7 +95,7 @@ func (s *MovieService) GetAllMoviesWithYear(year, page, limit int, ctx context.C
 		return m.MoviesPaginated{}, fmt.Errorf("%w: invalid release year.", m.ErrInvalidInput)
 	}
 
-	offset := (page - 1) * limit
+	offset := page * limit
 	movies, err := s.repo.FindMoviesByYear(year, limit, offset, ctx)
 	if err != nil {
 		return m.MoviesPaginated{}, err
@@ -127,7 +127,7 @@ func (s *MovieService) GetAllMoviesWithActor(actorID, page, limit int, ctx conte
 		return m.MoviesPaginated{}, fmt.Errorf("%w: invalid id", m.ErrInvalidInput)
 	}
 
-	offset := (page - 1) * limit
+	offset := page * limit
 	movies, err := s.repo.FindMoviesWithActor(actorID, limit, offset, ctx)
 	if err != nil {
 		return m.MoviesPaginated{}, err
@@ -158,7 +158,7 @@ func (s *MovieService) GetAllMoviesWithActor(actorID, page, limit int, ctx conte
 func (s *MovieService) GetAllMoviesWithTitle(title string, page, limit int, ctx context.Context) ([]m.MovieDto, error) {
 	title = strings.ToLower(title)
 
-	offset := (page - 1) * limit
+	offset := page * limit
 
 	movies, err := s.repo.FindAllMovies(true, title, limit, offset, ctx)
 	if err != nil {
