@@ -74,6 +74,10 @@ func (s *ActorService) CreateActor(actorData m.ActorDto, ctx context.Context) (m
 		return m.Actor{}, err
 	}
 
+	if actorData.Name == "" {
+		return m.Actor{}, fmt.Errorf("%w: actor name cannot be empty", m.ErrBadRequest)
+	}
+
 	_, err = s.repo.FindActorByNameAndBirthDate(actorData.Name, actorData.BirthDate, ctx)
 
 	if err == nil {
