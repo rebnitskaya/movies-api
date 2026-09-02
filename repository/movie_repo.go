@@ -8,6 +8,8 @@ import (
 	"movies_api/models"
 	m "movies_api/models"
 	"strings"
+
+	"github.com/mattn/go-sqlite3"
 )
 
 func (r movieRepository) FindAllMovies(isSearch bool, title string, limit, offset int, ctx context.Context) ([]models.MovieDto, error) {
@@ -804,13 +806,6 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int, ctx context.Conte
 		SELECT id FROM movies WHERE id = ?
 	`
 
-	checkRelation := `
-    SELECT 1
-    FROM movie_actors
-    WHERE movie_id = ?
-    AND actor_id = ?
-	`
-
 	var id int
 
 	err := r.db.QueryRowContext(ctx, checkActor, actorID).Scan(&id)
@@ -819,32 +814,27 @@ func (r movieRepository) AddActorToMovie(movieID, actorID int, ctx context.Conte
 			return fmt.Errorf("%w: actor with id %d doesn't exist, can't add it to movie.", m.ErrActorNotFound, actorID)
 		}
 
-		return fmt.Errorf("%w: failed to check movie: %w", m.ErrInternalIssue, err)
+		return fmt.Errorf("%w: failed to check actor: %w", m.ErrInternalIssue, err)
 	}
 
 	err = r.db.QueryRowContext(ctx, checkMovie, movieID).Scan(&id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("%w: movie with id %d doesn't exist, can't add an actor to it.", m.ErrMovieNotFound, movieID)
 		}
 
 		return fmt.Errorf("%w: failed to check movie: %w", m.ErrInternalIssue, err)
 	}
 
-	err = r.db.QueryRowContext(ctx, checkRelation, movieID, actorID).Scan(&id)
-
-	if err == nil {
-		return fmt.Errorf("%w: actor with id %d is already added to movie %d",
-			m.ErrInvalidInput, actorID, movieID)
-	}
-
-	if !errors.Is(err, sql.ErrNoRows) {
-		return fmt.Errorf("%w: failed to check actor-movie relation: %w",
-			m.ErrInternalIssue, err)
-	}
-
 	_, err = r.db.ExecContext(ctx, query, movieID, actorID)
 	if err != nil {
+		var sqliteErr sqlite3.Error
+
+		if errors.As(err, &sqliteErr) {
+			if sqliteErr.Code == sqlite3.ErrConstraint {
+				return fmt.Errorf("%w: actor already in the movie.", m.ErrConflict)
+			}
+		}
+
 		return fmt.Errorf("%w: something happened during query execution: %w", m.ErrInternalIssue, err)
 	}
 

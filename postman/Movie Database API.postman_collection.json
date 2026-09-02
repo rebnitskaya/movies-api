@@ -235,7 +235,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/movies/search?title=matrixs",
+              "raw": "http://localhost:8080/api/movies/search?title=matrix",
               "protocol": "http",
               "host": [
                 "localhost"

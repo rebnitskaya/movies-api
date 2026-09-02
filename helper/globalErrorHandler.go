@@ -31,6 +31,8 @@ func handleError(w http.ResponseWriter, err error) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	case errors.Is(err, models.ErrMovieHasBeenMadeBefore):
 		http.Error(w, err.Error(), http.StatusBadRequest)
+	case errors.Is(err, models.ErrConflict):
+		http.Error(w, err.Error(), http.StatusConflict)
 
 	default:
 		log.Printf("internal error: %v", err)
