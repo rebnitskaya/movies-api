@@ -14,7 +14,7 @@ type GenreService struct {
 }
 
 func (s *GenreService) GetAllGenres(page, limit int, ctx context.Context) (m.GenresPaginated, error) {
-	offset := page * limit
+	offset := (page - 1) * limit
 
 	genres, err := s.repo.FindAllGenres(limit, offset, ctx)
 	if err != nil {

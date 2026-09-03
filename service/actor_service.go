@@ -14,7 +14,7 @@ type ActorService struct {
 }
 
 func (s *ActorService) GetAllActors(page, limit int, ctx context.Context) (m.ActorsPaginated, error) {
-	offset := page * limit
+	offset := (page - 1) * limit
 
 	actors, err := s.repo.FindAllActors(limit, offset, ctx)
 	if err != nil {
