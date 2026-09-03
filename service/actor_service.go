@@ -166,6 +166,10 @@ func (s *ActorService) GetActorsWithName(name string, ctx context.Context) ([]m.
 		return nil, err
 	}
 
+	sort.Slice(actors, func(i, j int) bool {
+		return actors[i].Id < actors[j].Id
+	})
+
 	result := make([]m.ActorWithoutMoviesDto, 0, len(actors))
 
 	for _, actor := range actors {
@@ -177,7 +181,7 @@ func (s *ActorService) GetActorsWithName(name string, ctx context.Context) ([]m.
 		}
 
 		for _, movie := range actor.Movies {
-			actorDto.Movies = append(actor.Movies, m.MovieWithoutActorsDto{
+			actorDto.Movies = append(actorDto.Movies, m.MovieWithoutActorsDto{
 				Id:          movie.Id,
 				Title:       movie.Title,
 				ReleaseYear: movie.ReleaseYear,

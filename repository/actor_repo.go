@@ -289,7 +289,7 @@ func (r actorRepository) FindActorsByName(name string, ctx context.Context) ([]m
 		LEFT JOIN movie_actors am ON a.id = am.actor_id
 		LEFT JOIN movies m ON am.movie_id = m.id
 		WHERE a.name LIKE ? COLLATE NOCASE
-		ORDER BY a.id
+		ORDER BY a.id, m.id
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, "%"+name+"%")
