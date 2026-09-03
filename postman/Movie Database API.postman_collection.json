@@ -106,7 +106,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/movies/?year=2014",
+              "raw": "http://localhost:8080/api/movies?year=2014",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -186,7 +186,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "http://localhost:8080/api/movies/?actor=1",
+              "raw": "http://localhost:8080/api/movies?actor=1",
               "protocol": "http",
               "host": [
                 "localhost"
@@ -249,7 +249,7 @@
               "query": [
                 {
                   "key": "title",
-                  "value": "matrixs"
+                  "value": "matrix"
                 }
               ]
             }
@@ -318,7 +318,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": ""
+              "raw": "http://localhost:8080/api/movies?genre=1"
             }
           },
           "response": []
@@ -329,7 +329,7 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": ""
+              "raw": "http://localhost:8080/api/movies?page=1&size=10"
             }
           },
           "response": []
