@@ -179,7 +179,6 @@ func (r actorRepository) FindActorByID(id int, ctx context.Context) (m.Actor, er
 		LEFT JOIN movie_actors ma ON a.id = ma.actor_id
 		LEFT JOIN movies m ON ma.movie_id = m.id
 		WHERE a.id = ?
-		ORDER BY a.id
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, id)
